@@ -38,7 +38,7 @@
 <!-- Buttons -->
 <button onclick="claimDailyBonus()">🎁 Daily Bonus</button>
 <button onclick="Telegram.WebApp.close()">Close App</button>
-
+<button onclick="playGame()">🎮 Play Game</button>ঔ
 <script>
   // ---------------- Firebase Config ----------------
   const firebaseConfig = {
@@ -116,6 +116,25 @@
       }
     });
   }
+function playGame() {
+  if (!userRef) return;
+
+  const reward = 20; // Game reward
+
+  userRef.update({
+    balance: firebase.firestore.FieldValue.increment(reward),
+    total_earned: firebase.firestore.FieldValue.increment(reward)
+  }).then(() => {
+    alert("🎮 Game completed! +" + reward + " Coins");
+
+    userRef.get().then(doc => {
+      const data = doc.data();
+      document.getElementById("userid").innerText =
+        "👤 User ID: " + data.telegram_id + " | Coins: " + data.balance;
+    });
+  });
+                       }
+  
 </script>
 
 </body>
