@@ -40,6 +40,9 @@
 <button onclick="playGame()">🎮 Play Game</button>
 <button onclick="watchAd()">📺 Watch Ad</button>
 <button onclick="Telegram.WebApp.close()">Close App</button>
+  <button onclick="shortenLink()">🔗 Click Link</button>
+
+  
 <script>
   // ---------------- Firebase Config ----------------
   const firebaseConfig = {
@@ -159,6 +162,28 @@ function playGame() {
 
   // পরে এখানে Monetag real ad code বসানো যাবে
             }
+  function shortenLink() {
+  if (!userRef) return;
+
+  const reward = 25; // Link click reward coin
+
+  // Coin add + Firebase update
+  userRef.update({
+    balance: firebase.firestore.FieldValue.increment(reward),
+    total_earned: firebase.firestore.FieldValue.increment(reward)
+  }).then(() => {
+    alert(`🔗 Link clicked! +${reward} Coins`);
+
+    // UI refresh
+    userRef.get().then(doc => {
+      const data = doc.data();
+      document.getElementById("userid").innerText =
+        "👤 User ID: " + data.telegram_id + " | Coins: " + data.balance;
+    });
+  });
+
+  // এখানে পরে Real link redirect / shortener code বসানো যাবে
+  }
   
 </script>
 
