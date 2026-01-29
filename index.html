@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>My Telegram Mini App</title>
+
+  <!-- Telegram Mini App SDK -->
+  <script src="https://telegram.org/js/telegram-web-app.js"></script>
+
+  <!-- Firebase SDK -->
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+
+  <style>
+    body {
+      background: #121212;
+      color: white;
+      text-align: center;
+      font-family: Arial;
+      padding: 30px;
+    }
+    button {
+      padding: 12px 20px;
+      background: #0088cc;
+      color: white;
+      border: none;
+      border-radius: 8px;
+      font-size: 16px;
+      margin: 10px;
+      cursor: pointer;
+    }
+  </style>
+</head>
+
+<body>
+<h2>🚀 My Telegram Mini App</h2>
+<p id="userid">Loading user...</p>
+
+<!-- Buttons -->
+<button onclick="claimDailyBonus()">🎁 Daily Bonus</button>
+<button onclick="Telegram.WebApp.close()">Close App</button>
+
+<script>
+  // ---------------- Firebase Config ----------------
+  const firebaseConfig = {
+    apiKey: "PASTE_HERE",
+    authDomain: "PASTE_HERE",
+    projectId: "PASTE_HERE",
+    storageBucket: "PASTE_HERE",
+    messagingSenderId: "PASTE_HERE",
+    appId: "PASTE_HERE"
+  };
+
+  firebase.initializeApp(firebaseConfig);
+  const db = firebase.firestore();
+
+  const tg = Telegram.WebApp;
+  tg.expand();
+
+  const user = tg.initDataUnsafe?.user;
+  let userRef;
+
+  if (user) {
+    userRef = db.collection("users").doc(String(user.id));
+
+    // Check if user exists
+    userRef.get().then((doc) => {
+      if (!doc.exists) {
+        // New user
+        userRef.set({
+          telegram_id: user.id,
+          username: user.first_name || "",
+          balance: 0,
+          total_earned: 0,
+          joined_at: firebase.firestore.FieldValue.serverTimestamp(),
+          last_bonus: null
+        });
+        document.getElementById("userid").innerText =
+          "👤 User ID: " + user.id + " (New User)";
+      } else {
+        const data = doc.data();
+        document.getElementById("userid").innerText =
+          "👤 User ID: " + data.telegram_id + " | Coins: " + data.balance;
+      }
+    });
+  }
+
+  // ---------------- Daily Bonus Function ----------------
+  function claimDailyBonus() {
+    if (!userRef) return;
+
+    userRef.get().then((doc) => {
+      if (!doc.exists) return;
+
+      const data = doc.data();
+      const lastBonus = data.last_bonus?.toDate();
+      const now = new Date();
+      const oneDay = 24 * 60 * 60 * 1000; // 24 hours in ms
+
+      if (!lastBonus || now - lastBonus >= oneDay) {
+        // Give bonus
+        const bonusAmount = 10; // Coins
+        userRef.update({
+          balance: firebase.firestore.FieldValue.increment(bonusAmount),
+          total_earned: firebase.firestore.FieldValue.increment(bonusAmount),
+          last_bonus: firebase.firestore.FieldValue.serverTimestamp()
+        }).then(() => {
+          alert(`🎉 Daily Bonus: +${bonusAmount} Coins`);
+          userRef.get().then(doc => {
+            document.getElementById("userid").innerText =
+              "👤 User ID: " + data.telegram_id + " | Coins: " + doc.data().balance;
+          });
+        });
+      } else {
+        const nextClaim = new Date(lastBonus.getTime() + oneDay);
+        alert(`⏳ Next bonus available at: ${nextClaim.toLocaleString()}`);
+      }
+    });
+  }
+</script>
+
+</body>
+</html>
