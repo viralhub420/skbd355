@@ -1,7 +1,8 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <title>My Telegram Mini App</title>
+  <meta charset="UTF-8">
+  <title>SKBD Reward App</title>
 
   <!-- Telegram Mini App SDK -->
   <script src="https://telegram.org/js/telegram-web-app.js"></script>
@@ -18,6 +19,13 @@
       font-family: Arial;
       padding: 30px;
     }
+    .buttons {
+      margin-top: 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      align-items: center;
+    }
     button {
       padding: 12px 20px;
       background: #0088cc;
@@ -25,27 +33,27 @@
       border: none;
       border-radius: 8px;
       font-size: 16px;
-      margin: 10px;
       cursor: pointer;
     }
   </style>
 </head>
 
 <body>
-<h2>🚀 My Telegram Mini App</h2>
-<p id="userid">Loading user...</p>
+  <h2>🚀 SKBD Reward App</h2>
+  <p id="userid">Loading user...</p>
 
-<!-- Buttons -->
-<button onclick="claimDailyBonus()">🎁 Daily Bonus</button>
-<button onclick="playGame()">🎮 Play Game</button>
-<button onclick="watchAd()">📺 Watch Ad</button>
-<button onclick="shortenLink()">🔗 Click Link</button>
-<button onclick="offerWall()">🧲 Offer Wall</button>
-<button onclick="Telegram.WebApp.close()">Close App</button>
+  <div class="buttons">
+    <button onclick="claimDailyBonus()">🎁 Daily Bonus</button>
+    <button onclick="playGame()">🎮 Play Game</button>
+    <button onclick="watchAd()">📺 Watch Ad</button>
+    <button onclick="shortenLink()">🔗 Click Link</button>
+    <button onclick="offerWall()">🧲 Offer Wall</button>
+    <button onclick="Telegram.WebApp.close()">❌ Close App</button>
+  </div>
 
-<script>
-  // ---------------- Firebase Config ----------------
-  const firebaseConfig = {
+  <script>
+    // ---------------- Firebase Config ----------------
+    const firebaseConfig = {
   apiKey: "AIzaSyD8ZSiPZ9HDJV1qGznPOBAu2qYN9lmSqWU",
   authDomain: "skbd355-reward-app.firebaseapp.com",
   projectId: "skbd355-reward-app",
@@ -54,160 +62,129 @@
   appId: "1:826200547927:web:83e28d5187a3208716f912"
 };
 
-  firebase.initializeApp(firebaseConfig);
-  const db = firebase.firestore();
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.firestore();
 
-  const tg = Telegram.WebApp;
-  tg.expand();
+    // ---------------- Telegram Init ----------------
+    const tg = Telegram.WebApp;
+    tg.expand();
 
-  const user = tg.initDataUnsafe?.user;
-  let userRef;
+    const user = tg.initDataUnsafe?.user;
+    let userRef;
 
-  if (user) {
-    userRef = db.collection("users").doc(String(user.id));
+    if (user) {
+      userRef = db.collection("users").doc(String(user.id));
 
-    // Check if user exists
-    userRef.get().then((doc) => {
-      if (!doc.exists) {
-        // New user
-        userRef.set({
-          telegram_id: user.id,
-          username: user.first_name || "",
-          balance: 0,
-          total_earned: 0,
-          joined_at: firebase.firestore.FieldValue.serverTimestamp(),
-          last_bonus: null
-        });
-        document.getElementById("userid").innerText =
-          "👤 User ID: " + user.id + " (New User)";
-      } else {
+      // Check if user exists
+      userRef.get().then((doc) => {
+        if (!doc.exists) {
+          userRef.set({
+            telegram_id: user.id,
+            username: user.first_name || "",
+            balance: 0,
+            total_earned: 0,
+            joined_at: firebase.firestore.FieldValue.serverTimestamp(),
+            last_bonus: null
+          });
+          document.getElementById("userid").innerText =
+            "👤 User ID: " + user.id + " (New User)";
+        } else {
+          const data = doc.data();
+          document.getElementById("userid").innerText =
+            "👤 User ID: " + data.telegram_id + " | Coins: " + data.balance;
+        }
+      });
+    }
+
+    // ---------------- Step A: Daily Bonus ----------------
+    function claimDailyBonus() {
+      if (!userRef) return;
+
+      userRef.get().then((doc) => {
+        if (!doc.exists) return;
+
+        const data = doc.data();
+        const lastBonus = data.last_bonus?.toDate();
+        const now = new Date();
+        const oneDay = 24 * 60 * 60 * 1000;
+
+        if (!lastBonus || now - lastBonus >= oneDay) {
+          const bonusAmount = 10;
+          userRef.update({
+            balance: firebase.firestore.FieldValue.increment(bonusAmount),
+            total_earned: firebase.firestore.FieldValue.increment(bonusAmount),
+            last_bonus: firebase.firestore.FieldValue.serverTimestamp()
+          }).then(() => {
+            alert(`🎉 Daily Bonus: +${bonusAmount} Coins`);
+            refreshUserUI();
+          });
+        } else {
+          const nextClaim = new Date(lastBonus.getTime() + oneDay);
+          alert(`⏳ Next bonus available at: ${nextClaim.toLocaleString()}`);
+        }
+      });
+    }
+
+    // ---------------- Step A: Play Game ----------------
+    function playGame() {
+      if (!userRef) return;
+      const reward = 20;
+      userRef.update({
+        balance: firebase.firestore.FieldValue.increment(reward),
+        total_earned: firebase.firestore.FieldValue.increment(reward)
+      }).then(() => {
+        alert(`🎮 Game completed! +${reward} Coins`);
+        refreshUserUI();
+      });
+    }
+
+    // ---------------- Step B: Watch Ad ----------------
+    function watchAd() {
+      if (!userRef) return;
+      const adReward = 15;
+      userRef.update({
+        balance: firebase.firestore.FieldValue.increment(adReward),
+        total_earned: firebase.firestore.FieldValue.increment(adReward)
+      }).then(() => {
+        alert(`📺 Ad watched! +${adReward} Coins`);
+        refreshUserUI();
+      });
+    }
+
+    // ---------------- Step C: Click Link ----------------
+    function shortenLink() {
+      if (!userRef) return;
+      const reward = 25;
+      userRef.update({
+        balance: firebase.firestore.FieldValue.increment(reward),
+        total_earned: firebase.firestore.FieldValue.increment(reward)
+      }).then(() => {
+        alert(`🔗 Link clicked! +${reward} Coins`);
+        refreshUserUI();
+      });
+    }
+
+    // ---------------- Step D: Offer Wall ----------------
+    function offerWall() {
+      if (!userRef) return;
+      const reward = 50;
+      userRef.update({
+        balance: firebase.firestore.FieldValue.increment(reward),
+        total_earned: firebase.firestore.FieldValue.increment(reward)
+      }).then(() => {
+        alert(`🧲 Offer Completed! +${reward} Coins`);
+        refreshUserUI();
+      });
+    }
+
+    // ---------------- Refresh UI ----------------
+    function refreshUserUI() {
+      userRef.get().then(doc => {
         const data = doc.data();
         document.getElementById("userid").innerText =
           "👤 User ID: " + data.telegram_id + " | Coins: " + data.balance;
-      }
-    });
-  }
-
-  // ---------------- Daily Bonus Function ----------------
-  function claimDailyBonus() {
-    if (!userRef) return;
-
-    userRef.get().then((doc) => {
-      if (!doc.exists) return;
-
-      const data = doc.data();
-      const lastBonus = data.last_bonus?.toDate();
-      const now = new Date();
-      const oneDay = 24 * 60 * 60 * 1000; // 24 hours in ms
-
-      if (!lastBonus || now - lastBonus >= oneDay) {
-        // Give bonus
-        const bonusAmount = 10; // Coins
-        userRef.update({
-          balance: firebase.firestore.FieldValue.increment(bonusAmount),
-          total_earned: firebase.firestore.FieldValue.increment(bonusAmount),
-          last_bonus: firebase.firestore.FieldValue.serverTimestamp()
-        }).then(() => {
-          alert(`🎉 Daily Bonus: +${bonusAmount} Coins`);
-          userRef.get().then(doc => {
-            document.getElementById("userid").innerText =
-              "👤 User ID: " + data.telegram_id + " | Coins: " + doc.data().balance;
-          });
-        });
-      } else {
-        const nextClaim = new Date(lastBonus.getTime() + oneDay);
-        alert(`⏳ Next bonus available at: ${nextClaim.toLocaleString()}`);
-      }
-    });
-  }
-function playGame() {
-  if (!userRef) return;
-
-  const reward = 20; // Game reward
-
-  userRef.update({
-    balance: firebase.firestore.FieldValue.increment(reward),
-    total_earned: firebase.firestore.FieldValue.increment(reward)
-  }).then(() => {
-    alert("🎮 Game completed! +" + reward + " Coins");
-
-    userRef.get().then(doc => {
-      const data = doc.data();
-      document.getElementById("userid").innerText =
-        "👤 User ID: " + data.telegram_id + " | Coins: " + data.balance;
-    });
-  });
-                       }
-  function watchAd() {
-  if (!userRef) return;
-
-  // Monetag ad placeholder
-  // এখন Demo → Coin add
-  const adReward = 15; // Ad দেখলে Coin
-
-  // Coin add + Firebase update
-  userRef.update({
-    balance: firebase.firestore.FieldValue.increment(adReward),
-    total_earned: firebase.firestore.FieldValue.increment(adReward)
-  }).then(() => {
-    alert(`📺 Ad watched! +${adReward} Coins`);
-
-    // UI refresh
-    userRef.get().then(doc => {
-      const data = doc.data();
-      document.getElementById("userid").innerText =
-        "👤 User ID: " + data.telegram_id + " | Coins: " + data.balance;
-    });
-  });
-
-  // পরে এখানে Monetag real ad code বসানো যাবে
-            }
-  function shortenLink() {
-  if (!userRef) return;
-
-  const reward = 25; // Link click reward coin
-
-  // Coin add + Firebase update
-  userRef.update({
-    balance: firebase.firestore.FieldValue.increment(reward),
-    total_earned: firebase.firestore.FieldValue.increment(reward)
-  }).then(() => {
-    alert(`🔗 Link clicked! +${reward} Coins`);
-
-    // UI refresh
-    userRef.get().then(doc => {
-      const data = doc.data();
-      document.getElementById("userid").innerText =
-        "👤 User ID: " + data.telegram_id + " | Coins: " + data.balance;
-    });
-  });
-
-  // এখানে পরে Real link redirect / shortener code বসানো যাবে
-  }
- function offerWall() {
-  if (!userRef) return;
-
-  const reward = 50; // Offer Wall reward coin
-
-  // Coin add + Firebase update
-  userRef.update({
-    balance: firebase.firestore.FieldValue.increment(reward),
-    total_earned: firebase.firestore.FieldValue.increment(reward)
-  }).then(() => {
-    alert(`🧲 Offer Completed! +${reward} Coins`);
-
-    // UI refresh
-    userRef.get().then(doc => {
-      const data = doc.data();
-      document.getElementById("userid").innerText =
-        "👤 User ID: " + data.telegram_id + " | Coins: " + data.balance;
-    });
-  });
-
-  // পরে এখানে Monetag / OfferWall SDK / real offers integrate করা যাবে
-    } 
-  
-</script>
-
+      });
+    }
+  </script>
 </body>
-</html>
+    </html>
