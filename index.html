@@ -40,6 +40,7 @@
 <button onclick="playGame()">🎮 Play Game</button>
 <button onclick="watchAd()">📺 Watch Ad</button>
 <button onclick="shortenLink()">🔗 Click Link</button>
+<button onclick="offerWall()">🧲 Offer Wall</button>
 <button onclick="Telegram.WebApp.close()">Close App</button>
 
 <script>
@@ -183,6 +184,28 @@ function playGame() {
 
   // এখানে পরে Real link redirect / shortener code বসানো যাবে
   }
+ function offerWall() {
+  if (!userRef) return;
+
+  const reward = 50; // Offer Wall reward coin
+
+  // Coin add + Firebase update
+  userRef.update({
+    balance: firebase.firestore.FieldValue.increment(reward),
+    total_earned: firebase.firestore.FieldValue.increment(reward)
+  }).then(() => {
+    alert(`🧲 Offer Completed! +${reward} Coins`);
+
+    // UI refresh
+    userRef.get().then(doc => {
+      const data = doc.data();
+      document.getElementById("userid").innerText =
+        "👤 User ID: " + data.telegram_id + " | Coins: " + data.balance;
+    });
+  });
+
+  // পরে এখানে Monetag / OfferWall SDK / real offers integrate করা যাবে
+    } 
   
 </script>
 
