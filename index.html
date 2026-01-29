@@ -37,8 +37,9 @@
 
 <!-- Buttons -->
 <button onclick="claimDailyBonus()">🎁 Daily Bonus</button>
-<button onclick="Telegram.WebApp.close()">Close App</button>
 <button onclick="playGame()">🎮 Play Game</button>
+<button onclick="watchAd()">📺 Watch Ad</button>
+<button onclick="Telegram.WebApp.close()">Close App</button>
 <script>
   // ---------------- Firebase Config ----------------
   const firebaseConfig = {
@@ -134,6 +135,30 @@ function playGame() {
     });
   });
                        }
+  function watchAd() {
+  if (!userRef) return;
+
+  // Monetag ad placeholder
+  // এখন Demo → Coin add
+  const adReward = 15; // Ad দেখলে Coin
+
+  // Coin add + Firebase update
+  userRef.update({
+    balance: firebase.firestore.FieldValue.increment(adReward),
+    total_earned: firebase.firestore.FieldValue.increment(adReward)
+  }).then(() => {
+    alert(`📺 Ad watched! +${adReward} Coins`);
+
+    // UI refresh
+    userRef.get().then(doc => {
+      const data = doc.data();
+      document.getElementById("userid").innerText =
+        "👤 User ID: " + data.telegram_id + " | Coins: " + data.balance;
+    });
+  });
+
+  // পরে এখানে Monetag real ad code বসানো যাবে
+            }
   
 </script>
 
