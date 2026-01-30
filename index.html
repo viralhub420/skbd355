@@ -3,64 +3,40 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>SKBD Reward App</title>
+<title>SKBD Reward App - Admin</title>
 
 <script src="https://telegram.org/js/telegram-web-app.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
 
 <style>
-body {
-  background:#121212;
-  color:white;
-  text-align:center;
-  font-family: Arial, sans-serif;
-  padding:30px;
-}
-.buttons {
-  margin-top:20px;
-  display:flex;
-  flex-direction:column;
-  gap:12px;
-}
-button {
-  padding:14px;
-  background:#0088cc;
-  color:white;
-  border:none;
-  border-radius:10px;
-  font-size:16px;
-  cursor: pointer;
-  transition: 0.3s;
-}
-button:active {
-  transform: scale(0.98);
-}
-button:disabled {
-  opacity:0.5;
-  background: #555;
-  cursor: not-allowed;
-}
-#info {
-  background: #1e1e1e;
-  padding: 15px;
-  border-radius: 10px;
-  margin-bottom: 20px;
-  font-weight: bold;
-}
+body { background:#121212; color:white; text-align:center; font-family: Arial, sans-serif; padding:20px; }
+.buttons { display:flex; flex-direction:column; gap:12px; margin-top:20px; }
+button { padding:14px; background:#0088cc; color:white; border:none; border-radius:10px; font-size:16px; cursor: pointer; transition: 0.3s; }
+button:disabled { opacity:0.5; background: #555; }
+#info { background: #1e1e1e; padding: 15px; border-radius: 10px; margin-bottom: 20px; font-weight: bold; }
+#adminPanel { display:none; background:#f39c12; margin-top:20px; padding:15px; border-radius:10px; }
+.request-card { background:#2c3e50; padding:10px; margin-bottom:10px; border-radius:8px; text-align:left; font-size:14px; }
 </style>
 </head>
 
 <body>
 <h2>🚀 SKBD Reward App</h2>
-<div id="info">Loading Account...</div>
+<div id="info">Loading...</div>
 
 <div class="buttons">
   <button id="bonusBtn" onclick="claimDailyBonus()">🎁 Daily Bonus</button>
-  <button id="gameBtn" onclick="playGame()">🎮 Play Game</button>
   <button id="adBtn" onclick="watchAd()">📺 Watch Ad (+15 Coins)</button>
   <button id="linkBtn" onclick="clickLink()">🔗 Click Link (+25 Coins)</button>
+  
+  <button id="adminBtn" style="display:none; background:#e67e22;" onclick="toggleAdminPanel()">🛠 Admin Panel</button>
+  
   <button style="background:#e74c3c;" onclick="tg.close()">❌ Close App</button>
+</div>
+
+<div id="adminPanel">
+  <h3>Pending Withdraws</h3>
+  <div id="withdrawList">Loading requests...</div>
 </div>
 
 <script>
@@ -77,165 +53,94 @@ const tg = window.Telegram.WebApp;
 tg.expand();
 const user = tg.initDataUnsafe?.user;
 let userRef;
+const ADMIN_ID = 6311806060; // আপনার আইডি
 
-/* ---------------- MONETAG LINK SETUP ---------------- */
-const AD_LINK = "https://otieu.com/4/10540712"; 
-
-/* ---------------- WITHDRAW SYSTEM (FINAL STEP 4) ---------------- */
+/* ---------------- WITHDRAW BUTTON ---------------- */
 tg.MainButton.text = "💰 টাকা উত্তোলন (Withdraw)";
-tg.MainButton.textColor = "#FFFFFF";
 tg.MainButton.color = "#2ecc71";
 tg.MainButton.show();
 
 tg.MainButton.onClick(() => {
     if (!userRef) return;
-    
     userRef.get().then(doc => {
         const balance = doc.data().balance || 0;
-        
-        // ১০০০ কয়েন আছে কিনা চেক করা
         if (balance < 1000) {
-            tg.showAlert("⚠️ আপনার ব্যালেন্স ১০০০ কয়েনের কম! কাজ করে কয়েন জমান।");
+            tg.showAlert("⚠️ ব্যালেন্স ১০০০ কয়েনের কম!");
         } else {
-            // ইউজারের কাছ থেকে পেমেন্ট নম্বর নেওয়া
-            const phoneNumber = prompt("আপনার বিকাশ বা নগদ নম্বরটি লিখুন:");
-            
+            const phoneNumber = prompt("বিকাশ/নগদ নম্বর দিন:");
             if (phoneNumber && phoneNumber.length >= 11) {
-                tg.showConfirm(`আপনি কি ${phoneNumber} নম্বরে ১০০০ কয়েন উইথড্র করতে চান?`, (ok) => {
-                    if (ok) {
-                        // ১. ফায়ারবেজে 'withdraws' নামে নতুন কালেকশনে ডাটা সেভ করা
-                        db.collection("withdraws").add({
-                            user_id: user.id,
-                            name: user.first_name || "Unknown",
-                            payment_number: phoneNumber,
-                            amount: 1000,
-                            status: "pending",
-                            date: firebase.firestore.Timestamp.now()
-                        }).then(() => {
-                            // ২. ইউজারের অ্যাকাউন্ট থেকে ১০০০ কয়েন কেটে নেওয়া
-                            userRef.update({
-                                balance: firebase.firestore.FieldValue.increment(-1000)
-                            });
-                            tg.showAlert("✅ সফল! আপনার রিকোয়েস্ট এবং নম্বর ডাটাবেজে সেভ করা হয়েছে।");
-                        }).catch((error) => {
-                            tg.showAlert("❌ ডাটা সেভ হয়নি! আবার চেষ্টা করুন।");
-                        });
-                    }
+                db.collection("withdraws").add({
+                    user_id: user.id,
+                    name: user.first_name,
+                    payment_number: phoneNumber,
+                    amount: 1000,
+                    status: "pending",
+                    date: firebase.firestore.Timestamp.now()
+                }).then(() => {
+                    userRef.update({ balance: firebase.firestore.FieldValue.increment(-1000) });
+                    tg.showAlert("✅ রিকোয়েস্ট পাঠানো হয়েছে!");
                 });
-            } else if (phoneNumber !== null) {
-                tg.showAlert("❌ সঠিক মোবাইল নম্বর দিন!");
             }
         }
     });
 });
 
-/* ---------------- USER DATA SYNC ---------------- */
+/* ---------------- USER SYNC & ADMIN CHECK ---------------- */
 if (user) {
   userRef = db.collection("users").doc(String(user.id));
+  
+  // অ্যাডমিন কিনা চেক করা
+  if (user.id === ADMIN_ID) {
+      document.getElementById("adminBtn").style.display = "block";
+  }
+
   userRef.onSnapshot(doc => {
     if (doc.exists) {
-      const u = doc.data();
-      document.getElementById("info").innerText = 
-        `👤 ID: ${u.telegram_id} | 💰 Coins: ${u.balance}`;
+      document.getElementById("info").innerText = `👤 ID: ${doc.data().telegram_id} | 💰 Coins: ${doc.data().balance}`;
     } else {
-      userRef.set({
-        telegram_id: user.id,
-        name: user.first_name || "Unknown",
-        balance: 0,
-        total_earned: 0,
-        last_bonus: null,
-        last_ad: null,
-        last_link: null
-      });
+      userRef.set({ telegram_id: user.id, name: user.first_name, balance: 0 });
     }
   });
-} else {
-  document.getElementById("info").innerText = "⚠️ Please open from Telegram";
 }
 
-/* ---------------- DAILY BONUS ---------------- */
-function claimDailyBonus() {
-  if (!userRef) return;
-  userRef.get().then(doc => {
-    const d = doc.data();
-    const now = Date.now();
-    const last = d.last_bonus ? d.last_bonus.toMillis() : 0;
-    
-    if (now - last < 86400000) {
-      alert("⏳ ২৪ ঘণ্টা পর আবার ট্রাই করুন!");
-      return;
-    }
-    
-    userRef.update({
-      balance: firebase.firestore.FieldValue.increment(10),
-      total_earned: firebase.firestore.FieldValue.increment(10),
-      last_bonus: firebase.firestore.Timestamp.now()
-    }).then(() => alert("🎉 +10 Coins Added!"));
+/* ---------------- ADMIN FUNCTIONS ---------------- */
+function toggleAdminPanel() {
+  const panel = document.getElementById("adminPanel");
+  panel.style.display = panel.style.display === "none" ? "block" : "none";
+  if (panel.style.display === "block") loadWithdrawRequests();
+}
+
+function loadWithdrawRequests() {
+  db.collection("withdraws").where("status", "==", "pending").orderBy("date", "desc").get().then(querySnapshot => {
+    let html = "";
+    querySnapshot.forEach(doc => {
+      const data = doc.data();
+      html += `
+        <div class="request-card">
+          <b>Name:</b> ${data.name}<br>
+          <b>Number:</b> ${data.payment_number}<br>
+          <b>Amount:</b> ${data.amount}<br>
+          <button style="padding:5px; font-size:12px; background:#27ae60; margin-top:5px;" onclick="markAsPaid('${doc.id}')">Mark Paid</button>
+        </div>`;
+    });
+    document.getElementById("withdrawList").innerHTML = html || "No pending requests.";
   });
 }
 
-/* ---------------- WATCH AD (MONETAG) ---------------- */
-function watchAd() {
-  if (!userRef) return;
-  const btn = document.getElementById("adBtn");
-
-  userRef.get().then(doc => {
-    const last = doc.data().last_ad?.toMillis() || 0;
-    if (Date.now() - last < 600000) { 
-      alert("⏳ ১০ মিনিট পরে আবার চেষ্টা করো");
-      return;
-    }
-
-    btn.disabled = true;
-    btn.innerText = "Ad Loading...";
-    tg.openLink(AD_LINK);
-
-    setTimeout(() => {
-      userRef.update({
-        balance: firebase.firestore.FieldValue.increment(15),
-        total_earned: firebase.firestore.FieldValue.increment(15),
-        last_ad: firebase.firestore.Timestamp.now()
-      }).then(() => {
-        alert("✅ Ad Complete! +15 Coins");
-        btn.disabled = false;
-        btn.innerText = "📺 Watch Ad (+15 Coins)";
-      });
-    }, 10000);
-  });
+function markAsPaid(docId) {
+  if (confirm("পেমেন্ট কি করা হয়েছে?")) {
+    db.collection("withdraws").doc(docId).update({ status: "success" }).then(() => {
+      alert("Updated!");
+      loadWithdrawRequests();
+    });
+  }
 }
 
-/* ---------------- CLICK LINK (REWARD) ---------------- */
-function clickLink() {
-  if (!userRef) return;
-  const btn = document.getElementById("linkBtn");
-
-  userRef.get().then(doc => {
-    const last = doc.data().last_link?.toMillis() || 0;
-    if (Date.now() - last < 3600000) { 
-      alert("⏳ ১ ঘণ্টা পর আবার চেষ্টা করো");
-      return;
-    }
-
-    btn.disabled = true;
-    tg.openLink(AD_LINK);
-
-    setTimeout(() => {
-      userRef.update({
-        balance: firebase.firestore.FieldValue.increment(25),
-        total_earned: firebase.firestore.FieldValue.increment(25),
-        last_link: firebase.firestore.Timestamp.now()
-      }).then(() => {
-        alert("🔗 Link Visit Success! +25 Coins");
-        btn.disabled = false;
-      });
-    }, 8000);
-  });
-}
-
-function playGame() {
-  alert("🎮 গেম ফিচারটি শীঘ্রই যুক্ত করা হবে!");
-}
+/* ---------------- FEATURES ---------------- */
+const AD_LINK = "https://otieu.com/4/10540712";
+function watchAd() { tg.openLink(AD_LINK); } // ডেমো ফাংশন
+function claimDailyBonus() { alert("বোনাস ফিচার সক্রিয়!"); }
+function clickLink() { tg.openLink(AD_LINK); }
 </script>
 </body>
-  </html>
-  
+</html>
