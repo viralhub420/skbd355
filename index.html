@@ -152,8 +152,8 @@
     function watchAd() {
     if (!userRef) return;
     // Monetag ad call
-    if (typeof show_206822 !== "undefined") {
-      show_206822().then(() => {
+    if (typeof show_10540199 !== "undefined") {
+      show_10540199().then(() => {
         const adReward = 15;
         userRef.update({
           balance: firebase.firestore.FieldValue.increment(adReward),
@@ -188,8 +188,8 @@
      function openOfferWall() {
     if (!userRef) return;
     // Monetag Offer Wall call (use correct zone ID)
-    if (typeof show_206823 !== "undefined") {
-      show_206823().then(() => {
+    if (typeof show_10540712 !== "undefined") {
+      show_10540712 ().then(() => {
         const offerReward = 50;
         userRef.update({
           balance: firebase.firestore.FieldValue.increment(offerReward),
