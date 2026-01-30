@@ -2,12 +2,11 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>SKBD Reward App</title>
 
-<!-- Telegram -->
 <script src="https://telegram.org/js/telegram-web-app.js"></script>
 
-<!-- Firebase -->
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
 
@@ -16,43 +15,57 @@ body {
   background:#121212;
   color:white;
   text-align:center;
-  font-family:Arial;
+  font-family: Arial, sans-serif;
   padding:30px;
 }
 .buttons {
   margin-top:20px;
   display:flex;
   flex-direction:column;
-  gap:10px;
+  gap:12px;
 }
 button {
-  padding:12px;
+  padding:14px;
   background:#0088cc;
   color:white;
   border:none;
-  border-radius:8px;
+  border-radius:10px;
   font-size:16px;
+  cursor: pointer;
+  transition: 0.3s;
+}
+button:active {
+  transform: scale(0.98);
 }
 button:disabled {
   opacity:0.5;
+  background: #555;
+  cursor: not-allowed;
+}
+#info {
+  background: #1e1e1e;
+  padding: 15px;
+  border-radius: 10px;
+  margin-bottom: 20px;
+  font-weight: bold;
 }
 </style>
 </head>
 
 <body>
 <h2>🚀 SKBD Reward App</h2>
-<p id="info">Loading...</p>
+<div id="info">Loading Account...</div>
 
 <div class="buttons">
-  <button onclick="claimDailyBonus()">🎁 Daily Bonus</button>
-  <button onclick="playGame()">🎮 Play Game</button>
-  <button onclick="watchAd()">📺 Watch Ad</button>
-  <button onclick="clickLink()">🔗 Click Link</button>
-  <button onclick="Telegram.WebApp.close()">❌ Close</button>
+  <button id="bonusBtn" onclick="claimDailyBonus()">🎁 Daily Bonus</button>
+  <button id="gameBtn" onclick="playGame()">🎮 Play Game</button>
+  <button id="adBtn" onclick="watchAd()">📺 Watch Ad (+15 Coins)</button>
+  <button id="linkBtn" onclick="clickLink()">🔗 Click Link (+25 Coins)</button>
+  <button style="background:#e74c3c;" onclick="tg.close()">❌ Close App</button>
 </div>
 
 <script>
-/* ---------------- FIREBASE ---------------- */
+/* ---------------- FIREBASE CONFIG ---------------- */
 firebase.initializeApp({
   apiKey: "AIzaSyD8ZSiPZ9HDJV1qGznPOBAu2qYN9lmSqWU",
   authDomain: "skbd355-reward-app.firebaseapp.com",
@@ -60,24 +73,26 @@ firebase.initializeApp({
 });
 const db = firebase.firestore();
 
-/* ---------------- TELEGRAM ---------------- */
-const tg = Telegram.WebApp;
+/* ---------------- TELEGRAM INIT ---------------- */
+const tg = window.Telegram.WebApp;
 tg.expand();
 const user = tg.initDataUnsafe?.user;
 let userRef;
 
-if (!user) {
-  document.getElementById("info").innerText = "Telegram user not found";
-}
-
-/* ---------------- USER INIT ---------------- */
+/* ---------------- USER DATA SYNC ---------------- */
 if (user) {
   userRef = db.collection("users").doc(String(user.id));
-  userRef.get().then(doc => {
-    if (!doc.exists) {
+  
+  // Real-time Update (ইউজারের ব্যালেন্স অটো আপডেট হবে)
+  userRef.onSnapshot(doc => {
+    if (doc.exists) {
+      const u = doc.data();
+      document.getElementById("info").innerText = 
+        `👤 ID: ${u.telegram_id} | 💰 Coins: ${u.balance}`;
+    } else {
       userRef.set({
         telegram_id: user.id,
-        name: user.first_name || "",
+        name: user.first_name || "Unknown",
         balance: 0,
         total_earned: 0,
         last_bonus: null,
@@ -85,100 +100,99 @@ if (user) {
         last_link: null
       });
     }
-    refreshUI();
   });
-}
-
-function refreshUI() {
-  userRef.get().then(d=>{
-    const u=d.data();
-    document.getElementById("info").innerText =
-      `👤 ${u.telegram_id} | 💰 Coins: ${u.balance}`;
-  });
+} else {
+  document.getElementById("info").innerText = "⚠️ Please open from Telegram";
 }
 
 /* ---------------- DAILY BONUS ---------------- */
 function claimDailyBonus() {
-  db.runTransaction(async t=>{
-    const doc = await t.get(userRef);
+  if (!userRef) return;
+  userRef.get().then(doc => {
     const d = doc.data();
     const now = Date.now();
     const last = d.last_bonus ? d.last_bonus.toMillis() : 0;
-    if (now - last < 86400000) throw "claimed";
-    t.update(userRef,{
+    
+    if (now - last < 86400000) {
+      alert("⏳ ২৪ ঘণ্টা পর আবার ট্রাই করুন!");
+      return;
+    }
+    
+    userRef.update({
       balance: firebase.firestore.FieldValue.increment(10),
       total_earned: firebase.firestore.FieldValue.increment(10),
       last_bonus: firebase.firestore.Timestamp.now()
-    });
-  }).then(()=>{
-    alert("🎉 +10 Coins");
-    refreshUI();
-  }).catch(()=>alert("⏳ Bonus already claimed"));
-}
-
-/* ---------------- GAME ---------------- */
-function playGame() {
-  userRef.update({
-    balance: firebase.firestore.FieldValue.increment(20),
-    total_earned: firebase.firestore.FieldValue.increment(20)
-  }).then(()=>{
-    alert("🎮 +20 Coins");
-    refreshUI();
+    }).then(() => alert("🎉 +10 Coins Added!"));
   });
 }
 
-/* ---------------- WATCH AD (ON CLICK – SAFE) ---------------- */
+/* ---------------- WATCH AD (MONETAG DIRECT LINK) ---------------- */
 function watchAd() {
-  userRef.get().then(doc=>{
+  if (!userRef) return;
+  const btn = document.getElementById("adBtn");
+  const directLink = "https://otieu.com/4/10540712"; 
+
+  userRef.get().then(doc => {
     const last = doc.data().last_ad?.toMillis() || 0;
-    if (Date.now() - last < 600000) {
-      alert("⏳ 10 মিনিট পরে আবার চেষ্টা করো");
+    if (Date.now() - last < 600000) { // ১০ মিনিট লক
+      alert("⏳ ১০ মিনিট পরে আবার চেষ্টা করো");
       return;
     }
 
-    // 👉 External ad page (Render)
-    Telegram.WebApp.openLink(
-      "https://skbd355.onrender.com/ad.html",
-      { try_instant_view: false }
-    );
+    btn.disabled = true;
+    btn.innerText = "Ad Loading...";
 
-    // 👉 Reward after 10 seconds
-    setTimeout(()=>{
+    // Monetag অ্যাড ওপেন করা
+    tg.openLink(directLink);
+
+    // ১০ সেকেন্ড পর রিওয়ার্ড ক্রেডিট
+    setTimeout(() => {
       userRef.update({
         balance: firebase.firestore.FieldValue.increment(15),
         total_earned: firebase.firestore.FieldValue.increment(15),
         last_ad: firebase.firestore.Timestamp.now()
-      }).then(()=>{
-        alert("📺 Ad complete! +15 Coins");
-        refreshUI();
+      }).then(() => {
+        alert("✅ Ad Complete! +15 Coins");
+        btn.disabled = false;
+        btn.innerText = "📺 Watch Ad (+15 Coins)";
       });
-    },10000);
+    }, 10000);
   });
 }
 
-/* ---------------- LINK CLICK ---------------- */
+/* ---------------- CLICK LINK (REWARD) ---------------- */
 function clickLink() {
-  userRef.get().then(doc=>{
+  if (!userRef) return;
+  const btn = document.getElementById("linkBtn");
+  const directLink = "https://otieu.com/4/10540712";
+
+  userRef.get().then(doc => {
     const last = doc.data().last_link?.toMillis() || 0;
-    if (Date.now() - last < 3600000) {
-      alert("⏳ Link once per hour");
+    if (Date.now() - last < 3600000) { // ১ ঘণ্টা লক
+      alert("⏳ ১ ঘণ্টা পর আবার চেষ্টা করো");
       return;
     }
 
-    Telegram.WebApp.openLink("https://example.com");
+    btn.disabled = true;
+    tg.openLink(directLink);
 
-    setTimeout(()=>{
+    setTimeout(() => {
       userRef.update({
         balance: firebase.firestore.FieldValue.increment(25),
         total_earned: firebase.firestore.FieldValue.increment(25),
         last_link: firebase.firestore.Timestamp.now()
-      }).then(()=>{
-        alert("🔗 +25 Coins");
-        refreshUI();
+      }).then(() => {
+        alert("🔗 Link Visit Success! +25 Coins");
+        btn.disabled = false;
       });
-    },8000);
+    }, 8000);
   });
+}
+
+/* ---------------- GAME (DEMO) ---------------- */
+function playGame() {
+  alert("🎮 গেম ফিচারটি শীঘ্রই যুক্ত করা হবে!");
 }
 </script>
 </body>
-  </html>
+</html>
