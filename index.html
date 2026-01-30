@@ -99,32 +99,41 @@
 
     // ---------------- Step A: Daily Bonus ----------------
     function claimDailyBonus() {
-      if (!userRef) return;
+  if (!userRef) return alert("User not loaded");
 
-      userRef.get().then((doc) => {
-        if (!doc.exists) return;
+  userRef.get().then((doc) => {
+    if (!doc.exists) return alert("User document not found");
 
-        const data = doc.data();
-        const lastBonus = data.last_bonus?.toDate();
-        const now = new Date();
-        const oneDay = 24 * 60 * 60 * 1000;
-
-        if (!lastBonus || now - lastBonus >= oneDay) {
-          const bonusAmount = 10;
-          userRef.update({
-            balance: firebase.firestore.FieldValue.increment(bonusAmount),
-            total_earned: firebase.firestore.FieldValue.increment(bonusAmount),
-            last_bonus: firebase.firestore.FieldValue.serverTimestamp()
-          }).then(() => {
-            alert(`🎉 Daily Bonus: +${bonusAmount} Coins`);
-            refreshUserUI();
-          });
-        } else {
-          const nextClaim = new Date(lastBonus.getTime() + oneDay);
-          alert(`⏳ Next bonus available at: ${nextClaim.toLocaleString()}`);
-        }
-      });
+    const data = doc.data();
+    let lastBonus = null;
+    try {
+      lastBonus = data.last_bonus ? data.last_bonus.toDate() : null;
+    } catch(e) {
+      console.error("Error converting last_bonus:", e);
+      lastBonus = null;
     }
+
+    const now = new Date();
+    const oneDay = 24*60*60*1000;
+
+    if (!lastBonus || now - lastBonus >= oneDay) {
+      const bonusAmount = 10;
+      userRef.update({
+        balance: firebase.firestore.FieldValue.increment(bonusAmount),
+        total_earned: firebase.firestore.FieldValue.increment(bonusAmount),
+        last_bonus: firebase.firestore.FieldValue.serverTimestamp()
+      }).then(() => {
+        alert(`🎉 Daily Bonus: +${bonusAmount} Coins`);
+      });
+    } else {
+      const nextClaim = new Date(lastBonus.getTime() + oneDay);
+      alert(`⏳ Next bonus available at: ${nextClaim.toLocaleString()}`);
+    }
+  }).catch(err => {
+    console.error("Daily Bonus error:", err);
+    alert("Daily Bonus failed, try again later");
+  });
+}
 
     // ---------------- Step A: Play Game ----------------
     function playGame() {
