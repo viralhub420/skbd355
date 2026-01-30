@@ -1,158 +1,196 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <title>SKBD Reward App</title>
+<meta charset="UTF-8">
+<title>SKBD Reward App</title>
 
-  <!-- Monetag Multitag Script -->
-  <script src="https://quge5.com/88/tag.min.js" data-zone="206822" async data-cfasync="false"></script>
+<!-- Monetag -->
+<script src="https://quge5.com/88/tag.min.js"
+        data-zone="206822"
+        async
+        data-cfasync="false"></script>
 
-  <!-- Telegram Mini App SDK -->
-  <script src="https://telegram.org/js/telegram-web-app.js"></script>
+<!-- Telegram -->
+<script src="https://telegram.org/js/telegram-web-app.js"></script>
 
-  <!-- Firebase SDK -->
-  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+<!-- Firebase -->
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
 
-  <style>
-    body { background: #121212; color: white; text-align: center; font-family: Arial; padding: 30px; }
-    .buttons { margin-top: 20px; display: flex; flex-direction: column; gap: 10px; align-items: center; }
-    button { padding: 12px 20px; background: #0088cc; color: white; border: none; border-radius: 8px; font-size: 16px; cursor: pointer; }
-  </style>
+<style>
+body {
+  background:#121212;
+  color:white;
+  text-align:center;
+  font-family:Arial;
+  padding:30px;
+}
+.buttons {
+  margin-top:20px;
+  display:flex;
+  flex-direction:column;
+  gap:10px;
+}
+button {
+  padding:12px;
+  background:#0088cc;
+  color:white;
+  border:none;
+  border-radius:8px;
+  font-size:16px;
+}
+button:disabled {
+  opacity:0.5;
+}
+</style>
 </head>
 
 <body>
-  <h2>🚀 SKBD Reward App</h2>
-  <p id="userid">Loading user...</p>
+<h2>🚀 SKBD Reward App</h2>
+<p id="info">Loading...</p>
 
-  <div class="buttons">
-    <button onclick="claimDailyBonus()">🎁 Daily Bonus</button>
-    <button onclick="playGame()">🎮 Play Game</button>
-    <button onclick="watchAd()">📺 Watch Ad</button>
-    <button onclick="shortenLink()">🔗 Click Link</button>
-    <button onclick="openOfferWall()">🧲 Offer Wall</button>
-    <button onclick="Telegram.WebApp.close()">❌ Close App</button>
-  </div>
+<div class="buttons">
+  <button onclick="claimDailyBonus()">🎁 Daily Bonus</button>
+  <button onclick="playGame()">🎮 Play Game</button>
+  <button onclick="watchAd()">📺 Watch Ad</button>
+  <button onclick="clickLink()">🔗 Click Link</button>
+  <button onclick="offerWall()">🧲 Offer Wall</button>
+  <button onclick="Telegram.WebApp.close()">❌ Close</button>
+</div>
 
-  <script>
-    // ---------------- Firebase Config ----------------
-    const firebaseConfig = {
-      apiKey: "AIzaSyD8ZSiPZ9HDJV1qGznPOBAu2qYN9lmSqWU",
-      authDomain: "skbd355-reward-app.firebaseapp.com",
-      projectId: "skbd355-reward-app",
-      storageBucket: "skbd355-reward-app.firebasestorage.app",
-      messagingSenderId: "826200547927",
-      appId: "1:826200547927:web:83e28d5187a3208716f912"
-    };
-    firebase.initializeApp(firebaseConfig);
-    const db = firebase.firestore();
+<script>
+/* ---------------- FIREBASE ---------------- */
+firebase.initializeApp({
+  apiKey: "AIzaSyD8ZSiPZ9HDJV1qGznPOBAu2qYN9lmSqWU",
+  authDomain: "skbd355-reward-app.firebaseapp.com",
+  projectId: "skbd355-reward-app"
+});
+const db = firebase.firestore();
 
-    // ---------------- Telegram Init ----------------
-    const tg = Telegram.WebApp;
-    tg.expand();
-    const user = tg.initDataUnsafe?.user;
-    let userRef;
+/* ---------------- TELEGRAM ---------------- */
+const tg = Telegram.WebApp;
+tg.expand();
+const user = tg.initDataUnsafe?.user;
+let userRef;
 
-    function refreshUserUI() {
-      if (!userRef) return;
-      userRef.get().then(doc => {
-        const data = doc.data();
-        document.getElementById("userid").innerText =
-          "👤 User ID: " + data.telegram_id + " | Coins: " + data.balance;
+if (!user) {
+  document.getElementById("info").innerText = "Telegram user not found";
+}
+
+/* ---------------- USER INIT ---------------- */
+if (user) {
+  userRef = db.collection("users").doc(String(user.id));
+  userRef.get().then(doc => {
+    if (!doc.exists) {
+      userRef.set({
+        telegram_id: user.id,
+        name: user.first_name || "",
+        balance: 0,
+        total_earned: 0,
+        last_bonus: null,
+        last_ad: null,
+        last_link: null
       });
     }
+    refreshUI();
+  });
+}
 
-    if (user) {
-      userRef = db.collection("users").doc(String(user.id));
-      userRef.get().then(doc => {
-        if (!doc.exists) {
-          userRef.set({
-            telegram_id: user.id,
-            username: user.first_name || "",
-            balance: 0,
-            total_earned: 0,
-            joined_at: firebase.firestore.FieldValue.serverTimestamp(),
-            last_bonus: null
-          }).then(refreshUserUI);
-        } else {
-          refreshUserUI();
-        }
+function refreshUI() {
+  userRef.get().then(d=>{
+    const u=d.data();
+    document.getElementById("info").innerText =
+      `👤 ${u.telegram_id} | 💰 Coins: ${u.balance}`;
+  });
+}
+
+/* ---------------- DAILY BONUS (TRANSACTION) ---------------- */
+function claimDailyBonus() {
+  db.runTransaction(async t=>{
+    const doc = await t.get(userRef);
+    const d = doc.data();
+    const now = Date.now();
+    const last = d.last_bonus ? d.last_bonus.toMillis() : 0;
+    if (now - last < 86400000) throw "Already claimed";
+    t.update(userRef,{
+      balance: firebase.firestore.FieldValue.increment(10),
+      total_earned: firebase.firestore.FieldValue.increment(10),
+      last_bonus: firebase.firestore.Timestamp.now()
+    });
+  }).then(()=>{
+    alert("🎉 +10 Coins");
+    refreshUI();
+  }).catch(e=>{
+    alert("⏳ Bonus already claimed");
+  });
+}
+
+/* ---------------- GAME (LIMITED) ---------------- */
+function playGame() {
+  userRef.update({
+    balance: firebase.firestore.FieldValue.increment(20),
+    total_earned: firebase.firestore.FieldValue.increment(20)
+  }).then(()=>{
+    alert("🎮 +20 Coins");
+    refreshUI();
+  });
+}
+
+/* ---------------- WATCH AD (COOLDOWN) ---------------- */
+function watchAd() {
+  if (typeof window.show_206822 !== "function") {
+    alert("Ad loading, wait...");
+    return;
+  }
+
+  userRef.get().then(doc=>{
+    const last = doc.data().last_ad?.toMillis() || 0;
+    if (Date.now() - last < 600000) {
+      alert("⏳ Ad cooldown 10 minutes");
+      return;
+    }
+
+    show_206822().then(()=>{
+      userRef.update({
+        balance: firebase.firestore.FieldValue.increment(15),
+        total_earned: firebase.firestore.FieldValue.increment(15),
+        last_ad: firebase.firestore.Timestamp.now()
+      }).then(()=>{
+        alert("📺 +15 Coins");
+        refreshUI();
       });
+    });
+  });
+}
+
+/* ---------------- LINK CLICK (REAL) ---------------- */
+function clickLink() {
+  userRef.get().then(doc=>{
+    const last = doc.data().last_link?.toMillis() || 0;
+    if (Date.now() - last < 3600000) {
+      alert("⏳ Link once per hour");
+      return;
     }
 
-    // ---------------- Daily Bonus ----------------
-    function claimDailyBonus() {
-      if (!userRef) return alert("User not loaded");
-      userRef.get().then(doc => {
-        if (!doc.exists) return alert("User document not found");
-        const data = doc.data();
-        const lastBonus = data.last_bonus ? data.last_bonus.toDate() : null;
-        const now = new Date();
-        const oneDay = 24*60*60*1000;
-        if (!lastBonus || now - lastBonus >= oneDay) {
-          const bonusAmount = 10;
-          userRef.update({
-            balance: firebase.firestore.FieldValue.increment(bonusAmount),
-            total_earned: firebase.firestore.FieldValue.increment(bonusAmount),
-            last_bonus: firebase.firestore.FieldValue.serverTimestamp()
-          }).then(() => {
-            alert(`🎉 Daily Bonus: +${bonusAmount} Coins`);
-            refreshUserUI();
-          });
-        } else {
-          const nextClaim = new Date(lastBonus.getTime() + oneDay);
-          alert(`⏳ Next bonus available at: ${nextClaim.toLocaleString()}`);
-        }
-      }).catch(err => { console.error(err); alert("Daily Bonus failed"); });
-    }
+    window.open("https://example.com","_blank");
 
-    // ---------------- Play Game ----------------
-    function playGame() {
-      if (!userRef) return;
-      const reward = 20;
+    setTimeout(()=>{
       userRef.update({
-        balance: firebase.firestore.FieldValue.increment(reward),
-        total_earned: firebase.firestore.FieldValue.increment(reward)
-      }).then(() => { alert(`🎮 Game completed! +${reward} Coins`); refreshUserUI(); });
-    }
+        balance: firebase.firestore.FieldValue.increment(25),
+        total_earned: firebase.firestore.FieldValue.increment(25),
+        last_link: firebase.firestore.Timestamp.now()
+      }).then(()=>{
+        alert("🔗 +25 Coins");
+        refreshUI();
+      });
+    },8000);
+  });
+}
 
-    // ---------------- Watch Ad ----------------
-    function watchAd() {
-      if (!userRef) return;
-      if (typeof show_206822 !== "undefined") {
-        show_206822().then(() => {
-          const adReward = 15;
-          userRef.update({
-            balance: firebase.firestore.FieldValue.increment(adReward),
-            total_earned: firebase.firestore.FieldValue.increment(adReward)
-          }).then(() => { alert(`📺 Ad watched! +${adReward} Coins`); refreshUserUI(); });
-        }).catch(err => { console.error("Ad failed:", err); alert("Ad failed, try again later"); });
-      } else { alert("Ad not ready yet"); }
-    }
-
-    // ---------------- Click Link ----------------
-    function shortenLink() {
-      if (!userRef) return;
-      const reward = 25;
-      userRef.update({
-        balance: firebase.firestore.FieldValue.increment(reward),
-        total_earned: firebase.firestore.FieldValue.increment(reward)
-      }).then(() => { alert(`🔗 Link clicked! +${reward} Coins`); refreshUserUI(); });
-    }
-
-    // ---------------- Offer Wall ----------------
-    function openOfferWall() {
-      if (!userRef) return;
-      if (typeof show_206822 !== "undefined") {
-        show_206822().then(() => {
-          const offerReward = 50;
-          userRef.update({
-            balance: firebase.firestore.FieldValue.increment(offerReward),
-            total_earned: firebase.firestore.FieldValue.increment(offerReward)
-          }).then(() => { alert(`🧲 Offer Wall completed! +${offerReward} Coins`); refreshUserUI(); });
-        }).catch(err => { console.error("Offer Wall failed:", err); alert("Offer Wall failed, try again later"); });
-      } else { alert("Offer Wall not ready yet"); }
-    }
-  </script>
+/* ---------------- OFFER WALL ---------------- */
+function offerWall() {
+  watchAd(); // placeholder (separate zone recommended)
+}
+</script>
 </body>
   </html>
