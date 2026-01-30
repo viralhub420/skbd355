@@ -6,7 +6,6 @@
 <title>SKBD Reward App</title>
 
 <script src="https://telegram.org/js/telegram-web-app.js"></script>
-
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
 
@@ -78,37 +77,48 @@ const tg = window.Telegram.WebApp;
 tg.expand();
 const user = tg.initDataUnsafe?.user;
 let userRef;
-/* ---------------- TELEGRAM MAIN BUTTON (WITHDRAW) ---------------- */
+
+/* ---------------- MONETAG LINK SETUP ---------------- */
+const AD_LINK = "https://otieu.com/4/10540712"; 
+
+/* ---------------- WITHDRAW SYSTEM ---------------- */
 tg.MainButton.text = "💰 টাকা উত্তোলন (Withdraw)";
 tg.MainButton.textColor = "#FFFFFF";
-tg.MainButton.color = "#2ecc71"; // সবুজ রঙ
+tg.MainButton.color = "#2ecc71";
 tg.MainButton.show();
 
-// মেইন বাটনে ক্লিক করলে কি হবে
 tg.MainButton.onClick(() => {
+    if (!userRef) return;
     userRef.get().then(doc => {
         const balance = doc.data().balance || 0;
         if (balance < 1000) {
             tg.showAlert("⚠️ আপনার ব্যালেন্স ১০০০ কয়েনের কম! আরও কাজ করুন।");
         } else {
-            // এখানে উইথড্র ফর্ম বা মেসেজ দেখাবে
             tg.showConfirm("আপনি কি ১০০০ কয়েন উইথড্র করতে চান?", (ok) => {
                 if (ok) {
-                    alert("আপনার রিকোয়েস্ট পাঠানো হয়েছে (উইথড্র পেজ ৪-এ আসবে)");
+                    // ফায়ারবেজে উইথড্র রিকোয়েস্ট পাঠানো
+                    db.collection("withdraws").add({
+                        user_id: user.id,
+                        name: user.first_name,
+                        amount: 1000,
+                        status: "pending",
+                        date: firebase.firestore.Timestamp.now()
+                    }).then(() => {
+                        // ইউজারের ব্যালেন্স থেকে ১০০০ কয়েন কেটে নেওয়া
+                        userRef.update({
+                            balance: firebase.firestore.FieldValue.increment(-1000)
+                        });
+                        tg.showAlert("✅ রিকোয়েস্ট সফল! শীঘ্রই আপনার পেমেন্ট প্রসেস করা হবে।");
+                    });
                 }
             });
         }
     });
 });
 
-/* ---------------- MONETAG LINK SETUP ---------------- */
-const AD_LINK = "https://otieu.com/4/10540712"; // আপনার ডাইরেক্ট লিঙ্ক
-
 /* ---------------- USER DATA SYNC ---------------- */
 if (user) {
   userRef = db.collection("users").doc(String(user.id));
-  
-  // Real-time Update (ইউজারের ব্যালেন্স অটো আপডেট হবে)
   userRef.onSnapshot(doc => {
     if (doc.exists) {
       const u = doc.data();
@@ -151,26 +161,22 @@ function claimDailyBonus() {
   });
 }
 
-/* ---------------- WATCH AD (MONETAG DIRECT LINK) ---------------- */
+/* ---------------- WATCH AD (MONETAG) ---------------- */
 function watchAd() {
   if (!userRef) return;
   const btn = document.getElementById("adBtn");
-  
 
   userRef.get().then(doc => {
     const last = doc.data().last_ad?.toMillis() || 0;
-    if (Date.now() - last < 600000) { // ১০ মিনিট লক
+    if (Date.now() - last < 600000) { 
       alert("⏳ ১০ মিনিট পরে আবার চেষ্টা করো");
       return;
     }
 
     btn.disabled = true;
     btn.innerText = "Ad Loading...";
-
-    // Monetag অ্যাড ওপেন করা
     tg.openLink(AD_LINK);
 
-    // ১০ সেকেন্ড পর রিওয়ার্ড ক্রেডিট
     setTimeout(() => {
       userRef.update({
         balance: firebase.firestore.FieldValue.increment(15),
@@ -189,17 +195,16 @@ function watchAd() {
 function clickLink() {
   if (!userRef) return;
   const btn = document.getElementById("linkBtn");
-  const directLink = "https://otieu.com/4/10540712";
 
   userRef.get().then(doc => {
     const last = doc.data().last_link?.toMillis() || 0;
-    if (Date.now() - last < 3600000) { // ১ ঘণ্টা লক
+    if (Date.now() - last < 3600000) { 
       alert("⏳ ১ ঘণ্টা পর আবার চেষ্টা করো");
       return;
     }
 
     btn.disabled = true;
-    tg.openLink(directLink);
+    tg.openLink(AD_LINK); // এখানে AD_LINK ব্যবহার করা হয়েছে
 
     setTimeout(() => {
       userRef.update({
@@ -214,7 +219,6 @@ function clickLink() {
   });
 }
 
-/* ---------------- GAME (DEMO) ---------------- */
 function playGame() {
   alert("🎮 গেম ফিচারটি শীঘ্রই যুক্ত করা হবে!");
 }
