@@ -155,7 +155,7 @@ function claimDailyBonus() {
 function watchAd() {
   if (!userRef) return;
   const btn = document.getElementById("adBtn");
-  const directLink = "https://otieu.com/4/10540712"; 
+  
 
   userRef.get().then(doc => {
     const last = doc.data().last_ad?.toMillis() || 0;
@@ -168,7 +168,7 @@ function watchAd() {
     btn.innerText = "Ad Loading...";
 
     // Monetag অ্যাড ওপেন করা
-    tg.openLink(directLink);
+    tg.openLink(AD_LINK);
 
     // ১০ সেকেন্ড পর রিওয়ার্ড ক্রেডিট
     setTimeout(() => {
