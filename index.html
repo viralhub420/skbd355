@@ -150,16 +150,26 @@
 
     // ---------------- Step B: Watch Ad ----------------
     function watchAd() {
-      if (!userRef) return;
-      const adReward = 15;
-      userRef.update({
-        balance: firebase.firestore.FieldValue.increment(adReward),
-        total_earned: firebase.firestore.FieldValue.increment(adReward)
-      }).then(() => {
-        alert(`📺 Ad watched! +${adReward} Coins`);
-        refreshUserUI();
+    if (!userRef) return;
+    // Monetag ad call
+    if (typeof show_206822 !== "undefined") {
+      show_206822().then(() => {
+        const adReward = 15;
+        userRef.update({
+          balance: firebase.firestore.FieldValue.increment(adReward),
+          total_earned: firebase.firestore.FieldValue.increment(adReward)
+        }).then(() => {
+          alert(`📺 Ad watched! +${adReward} Coins`);
+          refreshUserUI();
+        });
+      }).catch(err => {
+        console.error("Ad failed:", err);
+        alert("Ad failed, try again later");
       });
+    } else {
+      alert("Ad not ready");
     }
+  }
 
     // ---------------- Step C: Click Link ----------------
     function shortenLink() {
@@ -175,17 +185,27 @@
     }
 
     // ---------------- Step D: Offer Wall ----------------
-    function offerWall() {
-      if (!userRef) return;
-      const reward = 50;
-      userRef.update({
-        balance: firebase.firestore.FieldValue.increment(reward),
-        total_earned: firebase.firestore.FieldValue.increment(reward)
-      }).then(() => {
-        alert(`🧲 Offer Completed! +${reward} Coins`);
-        refreshUserUI();
+     function openOfferWall() {
+    if (!userRef) return;
+    // Monetag Offer Wall call (use correct zone ID)
+    if (typeof show_206823 !== "undefined") {
+      show_206823().then(() => {
+        const offerReward = 50;
+        userRef.update({
+          balance: firebase.firestore.FieldValue.increment(offerReward),
+          total_earned: firebase.firestore.FieldValue.increment(offerReward)
+        }).then(() => {
+          alert(`🧲 Offer Wall completed! +${offerReward} Coins`);
+          refreshUserUI();
+        });
+      }).catch(err => {
+        console.error("Offer Wall failed:", err);
+        alert("Offer Wall failed, try again later");
       });
+    } else {
+      alert("Offer Wall not ready");
     }
+     }
 
     // ---------------- Refresh UI ----------------
     function refreshUserUI() {
