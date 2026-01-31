@@ -19,7 +19,8 @@
         .btn-main { background: #27ae60; grid-column: span 2; }
         .btn-game { background: #2980b9; }
         .btn-offer { background: #8e44ad; }
-        .btn-ref { background: #f39c12; grid-column: span 2; margin-top: 10px; }
+        .btn-rules { background: #e74c3c; grid-column: span 2; margin-top: 10px; }
+        .btn-ref { background: #f39c12; grid-column: span 2; }
         #adminBtn { background: #d35400; margin-top: 20px; width: 100%; display: none; }
     </style>
 </head>
@@ -32,7 +33,7 @@
 
     <div class="refer-section">
         <p style="margin:0 0 10px 0; font-size:14px;">🎁 প্রতি রেফারে পান ১০০ কয়েন!</p>
-        <button class="btn-ref" onclick="shareReferral()">🔗 Invite Friends</button>
+        <button class="btn-ref" onclick="shareReferral()">🔗 Invite Friends & Earn </button>
     </div>
 
     <div class="btn-grid">
@@ -40,12 +41,13 @@
         <button class="btn-game" onclick="awardCoins(50, 20, LINKS.game, 'Game Bonus')">🎮 Play Game (+50)</button>
         <button class="btn-offer" onclick="awardCoins(100, 30, LINKS.offer, 'Mega Offer')">🧲 Offer Wall (+100)</button>
         <button class="btn-ad" onclick="awardCoins(15, 10, LINKS.general, 'Ad Reward')">📺 Watch Ad (+15)</button>
-        <button class="btn-ad" style="background:#16a085;" onclick="tg.openLink('https://t.me/skbd355_official')">📢 Channel</button>
+        <button class="btn-rules" onclick="showRules()">📜 Rules & Information</button>
+        <button class="btn-ad" style="background:#16a085; grid-column: span 2;" onclick="tg.openLink('https://t.me/skbd355_official')">📢 Official Channel</button>
     </div>
+    
     <button id="adminBtn" onclick="toggleAdmin()">🛠 Admin Dashboard</button>
 
 <script>
-/* --- Configuration --- */
 const LINKS = { 
     general: "https://otieu.com/4/10540712", 
     game: "https://otieu.com/4/10235751", 
@@ -67,43 +69,34 @@ let userRef;
 if (user) {
     document.getElementById("userName").innerText = user.first_name;
     userRef = db.collection("users").doc(String(user.id));
-    
-    // Admin Check
     if (user.id === 6311806060) document.getElementById("adminBtn").style.display = "block";
 
     userRef.onSnapshot(doc => {
         if (doc.exists) {
             document.getElementById("userBalance").innerText = doc.data().balance;
         } else {
-            // New User Registration
-            userRef.set({ 
-                name: user.first_name, 
-                balance: 0, 
-                telegram_id: user.id,
-                joined_at: new Date()
-            }).then(() => {
-                // Referral Logic: Reward the Referrer
+            userRef.set({ name: user.first_name, balance: 0, telegram_id: user.id, joined_at: new Date() })
+            .then(() => {
                 if (startParam && startParam !== String(user.id)) {
-                    const referrerRef = db.collection("users").doc(startParam);
-                    referrerRef.update({ 
-                        balance: firebase.firestore.FieldValue.increment(100) 
-                    });
+                    db.collection("users").doc(startParam).update({ balance: firebase.firestore.FieldValue.increment(100) });
                 }
             });
         }
     });
 }
 
-// Referral Sharing Function
+function showRules() {
+    tg.showAlert(`📜 আমাদের নিয়মাবলী:\n\n১. বিজ্ঞাপনে ক্লিক করার পর অবশ্যই ২০-৩০ সেকেন্ড অপেক্ষা করতে হবে।\n২. ভুল ক্লিক করলে কয়েন যোগ হবে না।\n৩. ১০০০ কয়েন হলে বিকাশে পেমেন্ট নিতে পারবেন।\n৪. পেমেন্ট ২৪ ঘন্টার মধ্যে করা হয়।\n৫. বেশি ইনকামের জন্য USA বা UK VPN ব্যবহার করুন।`);
+}
+
 function shareReferral() {
     const inviteLink = `https://t.me/skbd355_bot?start=${user.id}`; 
-    const shareText = `🚀 এই অ্যাপে গেম খেলে আর ভিডিও দেখে টাকা ইনকাম করা যায়! আমার লিঙ্ক থেকে জয়েন করলে আপনিও বোনাস পাবেন। এখনই শুরু করুন:`;
+    const shareText = `🚀 এই অ্যাপে গেম খেলে আর ভিডিও দেখে টাকা ইনকাম করা যায়! জয়েন করলেই বোনাস পাবেন:`;
     tg.openTelegramLink(`https://t.me/share/url?url=${encodeURIComponent(inviteLink)}&text=${encodeURIComponent(shareText)}`);
 }
 
-// Reward Function
 function awardCoins(amount, time, link, taskName) {
-    tg.showConfirm(`${taskName} এর জন্য বিজ্ঞাপনে ${time} সেকেন্ড থাকুন। রাজি?`, (ok) => {
+    tg.showConfirm(`${taskName}: বিজ্ঞাপনে ${time} সেকেন্ড থাকলে কয়েন পাবেন। শুরু করবেন?`, (ok) => {
         if (ok) {
             tg.openLink(link);
             setTimeout(() => {
@@ -114,44 +107,30 @@ function awardCoins(amount, time, link, taskName) {
     });
 }
 
-// Admin Panel
 function toggleAdmin() {
     db.collection("withdraws").where("status", "==", "pending").get().then(snap => {
         let list = "Pending Withdraws:\n";
-        snap.forEach(doc => {
-            list += `ID: ${doc.data().user_id} | Num: ${doc.data().number} | Amt: ${doc.data().amount}\n`;
-        });
+        snap.forEach(doc => { list += `Num: ${doc.data().number} | Amt: ${doc.data().amount}\n`; });
         alert(list || "No pending requests.");
     });
 }
 
-tg.expand();
-
-// Withdraw System
 tg.MainButton.setText("💰 WITHDRAW MONEY").show().onClick(() => {
     userRef.get().then(doc => {
-        if (doc.data().balance < 1000) {
-            tg.showAlert("⚠️ উইথড্র করতে অন্তত ১০০০ কয়েন প্রয়োজন!");
-        } else {
-            const num = prompt("আপনার বিকাশ/নগদ নম্বর দিন:");
+        if (doc.data().balance < 1000) tg.showAlert("⚠️ অন্তত ১০০০ কয়েন প্রয়োজন!");
+        else {
+            const num = prompt("বিকাশ/নগদ নম্বর:");
             if (num && num.length >= 11) {
-                db.collection("withdraws").add({ 
-                    user_id: user.id, 
-                    name: user.first_name,
-                    number: num, 
-                    amount: 1000, 
-                    status: "pending", 
-                    date: new Date() 
-                }).then(() => {
+                db.collection("withdraws").add({ user_id: user.id, name: user.first_name, number: num, amount: 1000, status: "pending", date: new Date() })
+                .then(() => {
                     userRef.update({ balance: firebase.firestore.FieldValue.increment(-1000) });
                     tg.showAlert("✅ উইথড্র রিকোয়েস্ট পাঠানো হয়েছে!");
                 });
-            } else {
-                tg.showAlert("❌ সঠিক নম্বর দিন!");
             }
         }
     });
 });
+tg.expand();
 </script>
 </body>
-  </html>
+</html>
