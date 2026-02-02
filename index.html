@@ -144,7 +144,7 @@ tg.MainButton.setText("💰 WITHDRAW MONEY").show().onClick(() => {
                 db.collection("withdraws").add({ user_id: user.id, name: user.first_name, number: num, amount: 5000, status: "pending", date: new Date() })
                 .then(() => {
                     userRef.update({ balance: firebase.firestore.FieldValue.increment(-5000) });
-                    tg.showAlert("✅ উইথড্র রিকোয়েস্ট পাঠানো হয়েছে!");
+                    tg.showAlert("✅ ধন্যবাদ! আপনার উইথড্র রিকোয়েস্টটি সফলভাবে গ্রহণ করা হয়েছে। আগামী ২৪-৪৮ ঘণ্টার মধ্যে পেমেন্ট পেয়ে যাবেন।");
                 });
             }
         }
