@@ -125,7 +125,7 @@ function awardCoins(amount, time, link, taskName) {
     });
 }
 function toggleAdmin() {
-    db.collection("withdraws").where("status", "==", "pending").get().then(snap => {
+    db.collection("withdraws").where("status","==","pending").get().then(snap => {
         let list = "📢 পেন্ডিং পেমেন্ট লিস্ট:\n\n";
         snap.forEach(doc => { 
             let d = doc.data();
