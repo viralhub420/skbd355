@@ -125,26 +125,44 @@ function awardCoins(amount, time, link, taskName) {
         }
     });
 }
-
 function toggleAdmin() {
     db.collection("withdraws").where("status", "==", "pending").get().then(snap => {
-        let list = "Pending Withdraws:\n";
-        snap.forEach(doc => { list += `Num: ${doc.data().number} | Amt: ${doc.data().amount}\n`; });
-        alert(list || "No pending requests.");
+        let list = "📢 পেন্ডিং পেমেন্ট লিস্ট:\n\n";
+        snap.forEach(doc => { 
+            let d = doc.data();
+            // এখানে Method (বিকাশ/নগদ) সহ নম্বর এবং অ্যামাউন্ট দেখাবে
+            list += `📱 ${d.method ? d.method.toUpperCase() : 'N/A'}: ${d.number}\n💰 Amt: ${d.amount}\n\n`; 
+        });
+        alert(list || "বর্তমানে কোনো রিকোয়েস্ট নেই।");
     });
-}
 
 tg.MainButton.setText("💰 WITHDRAW MONEY").show().onClick(() => {
     userRef.get().then(doc => {
-        if (doc.data().balance < 5000) tg.showAlert("⚠️ অন্তত ৫০০০ পয়েন্ট প্রয়োজন!");
-        else {
-            const num = prompt("বিকাশ/রকেট/নগদ নম্বর:");
+        if (doc.data().balance < 5000) {
+            tg.showAlert("⚠️ অন্তত ৫০০০ পয়েন্ট প্রয়োজন!");
+        } else {
+            // বিকাশ/নগদ/রকেট অপশন যোগ করা হলো
+            const method = prompt("পেমেন্ট মাধ্যম লিখুন (bkash/nagad/rocket):");
+            if (!method || !['bkash', 'nagad', 'rocket'].includes(method.toLowerCase())) {
+                return tg.showAlert("❌ সঠিক মাধ্যম লিখুন (bkash, nagad অথবা rocket)");
+            }
+
+            const num = prompt(`${method.toUpperCase()} নম্বরটি লিখুন:`);
             if (num && num.length >= 11) {
-                db.collection("withdraws").add({ user_id: user.id, name: user.first_name, number: num, amount: 5000, status: "pending", date: new Date() })
-                .then(() => {
+                db.collection("withdraws").add({
+                    user_id: user.id,
+                    name: user.first_name,
+                    number: num,
+                    amount: 5000,
+                    method: method.toLowerCase(), // মাধ্যমটি ডাটাবেসে সেভ হবে
+                    status: "pending",
+                    timestamp: new Date()
+                }).then(() => {
                     userRef.update({ balance: firebase.firestore.FieldValue.increment(-5000) });
-                    tg.showAlert("✅ ধন্যবাদ! আপনার উইথড্র রিকোয়েস্টটি সফলভাবে গ্রহণ করা হয়েছে। আগামী ২৪-৪৮ ঘণ্টার মধ্যে পেমেন্ট পেয়ে যাবেন।");
+                    tg.showAlert("✅ আপনার " + method.toUpperCase() + " রিকোয়েস্টটি গ্রহণ করা হয়েছে!");
                 });
+            } else {
+                tg.showAlert("❌ সঠিক নম্বর দিন!");
             }
         }
     });
