@@ -21,7 +21,6 @@
         .btn-rules { background: #e74c3c; grid-column: span 2; margin-top: 10px; }
         .btn-ref { background: #f39c12; grid-column: span 2; }
         #adminBtn { background: #d35400; margin-top: 20px; width: 100%; display: none; }
-        .review-btn { background: #f1c40f !important; color: #000 !important; font-size: 13px !important; padding: 10px 5px !important; }
     </style>
 </head>
 <body>
@@ -33,20 +32,19 @@
 
     <div class="refer-section">
         <p style="margin:0 0 10px 0; font-size:14px;">🎁 প্রতি রেফারে পান ১০০ পয়েন্ট!</p>
-        <button class="btn-ref" id="shareBtn">🔗 Invite Friends & Earn </button>
+        <button class="btn-ref" onclick="shareReferral()">🔗 Invite Friends & Earn </button>
     </div>
 
     <div class="btn-grid">
         <button class="btn-main" onclick="awardCoins(20, 85, LINKS.general, 'Daily Bonus')">🎁 Daily Bonus (+20)</button>
         <button class="btn-game" onclick="awardCoins(20, 85, LINKS.game, 'Game Bonus')">🎮 Play Game (+20)</button>
         <button class="btn-offer" onclick="awardCoins(20, 85, LINKS.offer, 'Mega Offer')">🧲 Offer Wall (+20)</button>
-        <button class="btn-ad" style="background: #f1c40f; color: #000; border: none;" onclick="awardCoins(15, 60, LINKS.general, 'Ad Reward')">📺 Watch Ad (+15)</button>
-        <button class="btn review-btn" onclick="openReview()"> ⭐ Review (+10)</button>
-        <button class="btn-rules" id="rulesBtn" onclick="showRules()">📜 Rules & Information</button>
+        <button class="btn-ad" style="background: #f1c40f; color: #000;" onclick="awardCoins(15, 60, LINKS.general, 'Ad Reward')">📺 Watch Ad (+15)</button>
+        <button class="btn-rules" onclick="showRules()">📜 Rules & Information</button>
         <button class="btn-ad" style="background:#16a085; grid-column: span 2;" onclick="tg.openLink('https://t.me/skbd355_official')">📢 Official Channel</button>
     </div>
     
-    <button id="adminBtn">🛠 Admin Dashboard</button>
+    <button id="adminBtn" onclick="toggleAdmin()">🛠 Admin Dashboard</button>
     
 <script>
 const LINKS = { 
@@ -86,14 +84,8 @@ if (user) {
     });
 }
 
-function openReview() {
-    window.open("https://otieu.com/4/10370640", "_blank");
-    setTimeout(function() { window.location.href = "https://t.me/skbd355_official"; }, 5000);
-    alert("অ্যাডটি দেখে রিভিউ সম্পন্ন করুন এবং ১০ পয়েন্ট বোনাস নিন!");
-}
-
 function showRules() {
-    tg.showAlert(`📜 আমাদের নিয়মাবলী:\n\n১. বিজ্ঞাপনে ক্লিক করার পর অবশ্যই অ্যাড দেখা সম্পূর্ণ করতে হবে।\n২. ভুল ক্লিক করলে কয়েন যোগ হবে না।\n৩. ৫০০০ পয়েন্ট হলে পয়েন্ট ভাঙিয়ে বিকাশ, নগদ বা রকেটে পেমেন্ট নিতে পারবেন।\n৪. পেমেন্ট ২৪ ঘন্টার মধ্যে করা হয়।\n৫. বেশি ইনকামের জন্য USA বা UK VPN ব্যবহার করুন।\n\n⚠️ বিশেষ দ্রষ্টব্য: পয়েন্ট মানেই টাকা নয়।`);
+    tg.showAlert("📜 আমাদের নিয়মাবলী:\n\n১. বিজ্ঞাপনে ক্লিক করার পর অবশ্যই অ্যাড দেখা সম্পূর্ণ করতে হবে।\n২. ভুল ক্লিক করলে কয়েন যোগ হবে না।\n৩. ৫০০০ পয়েন্ট হলে পয়েন্ট ভাঙিয়ে বিকাশ, নগদ বা রকেটে পেমেন্ট নিতে পারবেন।\n৪. পেমেন্ট ২৪ ঘন্টার মধ্যে করা হয়।\n৫. বেশি ইনকামের জন্য USA বা UK VPN ব্যবহার করুন।\n\n⚠️ বিশেষ দ্রষ্টব্য: পয়েন্ট মানেই টাকা নয়।");
 }
 
 function shareReferral() {
@@ -127,11 +119,6 @@ function toggleAdmin() {
     }).catch(err => alert("Error: " + err.message));
 }
 
-// বাটনগুলো সচল করার কোড
-document.getElementById("rulesBtn").onclick = () => showRules();
-document.getElementById("adminBtn").onclick = () => toggleAdmin();
-document.getElementById("shareBtn").onclick = () => shareReferral();
-
 tg.MainButton.setText("💰 WITHDRAW MONEY").show().onClick(() => {
     userRef.get().then(doc => {
         if (doc.exists && doc.data().balance < 5000) {
@@ -139,7 +126,7 @@ tg.MainButton.setText("💰 WITHDRAW MONEY").show().onClick(() => {
         } else {
             const method = prompt("পেমেন্ট মাধ্যম লিখুন (bkash/nagad/rocket):");
             if (!method || !['bkash', 'nagad', 'rocket'].includes(method.toLowerCase())) {
-                return tg.showAlert("❌ সঠিক মাধ্যম লিখুন (bkash, nagad অথবা rocket)");
+                return tg.showAlert("❌ সঠিক মাধ্যম লিখুন!");
             }
             const num = prompt(`${method.toUpperCase()} নম্বরটি লিখুন:`);
             if (num && num.length >= 11) {
@@ -153,17 +140,17 @@ tg.MainButton.setText("💰 WITHDRAW MONEY").show().onClick(() => {
                     timestamp: new Date()
                 }).then(() => {
                     userRef.update({ balance: firebase.firestore.FieldValue.increment(-5000) });
-                    tg.showAlert("✅ আপনার " + method.toUpperCase() + " রিকোয়েস্টটি সফল হয়েছে!");
+                    tg.showAlert("✅ আপনার রিকোয়েস্টটি সফল হয়েছে!");
                 });
             } else {
                 tg.showAlert("❌ সঠিক নম্বর দিন!");
             }
         }
-    }).catch(err => tg.showAlert("Error: " + err.message));
+    });
 });
 
 tg.expand();
 </script>
 </body>
-  </html>
-  
+            </html>
+    
