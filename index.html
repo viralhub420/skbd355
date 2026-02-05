@@ -93,6 +93,7 @@ function awardCoins(amount, time, link, taskName) {
     if(confirm(taskName + ": বিজ্ঞাপনে " + time + " সেকেন্ড থাকতে হবে। শুরু করবেন?")) {
         const startTime = Date.now();
         tg.openLink(link);
+        alert("বিজ্ঞাপনটি লোড হওয়া পর্যন্ত অপেক্ষা করুন এবং অন্তত ৬০-৮৫ সেকেন্ড সেখানে থাকুন। অন্যথায় ডলার জমা হবে না।");
         
         // ইউজার ফিরে আসলে ওয়ার্নিং চেক
         window.onfocus = function() {
