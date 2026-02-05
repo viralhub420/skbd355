@@ -126,16 +126,19 @@ function awardCoins(amount, time, link, taskName) {
     });
 }
 function toggleAdmin() {
-    db.collection("withdraws").where("status", "==", "pending").get().then(snap => {
+    // এখানে status এর বদলে আপনার ডাটাবেসের ফিল্ডের নাম অনুযায়ী চেক করবে
+    db.collection("withdraws").get().then(snap => {
         let list = "📢 পেন্ডিং পেমেন্ট লিস্ট:\n\n";
         snap.forEach(doc => { 
             let d = doc.data();
-            // এখানে Method (বিকাশ/নগদ) সহ নম্বর এবং অ্যামাউন্ট দেখাবে
-            list += `📱 ${d.method ? d.method.toUpperCase() : 'N/A'}: ${d.number}\n💰 Amt: ${d.amount}\n\n`; 
+            // শুধুমাত্র যেগুলোর স্ট্যাটাস 'pending' সেগুলোই দেখাবে
+            if (d.status === "pending") {
+                list += `📱 ${d.method ? d.method.toUpperCase() : 'N/A'}: ${d.number || d.payment_number}\n💰 Amt: ${d.amount}\n\n`; 
+            }
         });
-        alert(list || "বর্তমানে কোনো রিকোয়েস্ট নেই।");
+        alert(list || "বর্তমানে কোনো পেন্ডিং রিকোয়েস্ট নেই।");
     });
-}  
+}
 tg.MainButton.setText("💰 WITHDRAW MONEY").show().onClick(() => {
     userRef.get().then(doc => {
         if (doc.exists && doc.data().balance < 5000) {
