@@ -124,8 +124,9 @@ function awardCoins(amount, time, link, taskName) {
         }
     });
 }
+
 function toggleAdmin() {
-    db.collection("withdraws").where("status","==","pending").get().then(snap => {
+    db.collection("withdraws").where("status", "==", "pending").get().then(snap => {
         let list = "📢 পেন্ডিং পেমেন্ট লিস্ট:\n\n";
         snap.forEach(doc => { 
             let d = doc.data();
@@ -135,7 +136,8 @@ function toggleAdmin() {
         });
         alert(list || "বর্তমানে কোনো পেন্ডিং রিকোয়েস্ট নেই।");
     }).catch(err => alert("Error: " + err.message));
-    }
+                  }
+    
 
 tg.MainButton.setText("💰 WITHDRAW MONEY").show().onClick(() => {
     userRef.get().then(doc => {
