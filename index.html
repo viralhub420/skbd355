@@ -11,15 +11,13 @@
         body { background:#0f0f0f; color:#ffffff; text-align:center; font-family: 'Segoe UI', sans-serif; padding:15px; margin: 0; }
         .balance-card { background: linear-gradient(135deg, #0088cc, #005f91); padding: 25px; border-radius: 20px; margin-bottom: 20px; box-shadow: 0 10px 20px rgba(0,0,0,0.3); }
         .balance-card h1 { font-size: 42px; margin: 10px 0; }
-        .refer-section { background: #1e1e1e; padding: 15px; border-radius: 15px; margin-bottom: 20px; border: 1px dashed #0088cc; }
         .btn-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
         button { padding: 16px; border: none; border-radius: 15px; font-weight: bold; cursor: pointer; font-size: 14px; color: white; transition: 0.2s; }
         button:active { transform: scale(0.95); }
+        .btn-rules { background: #e74c3c; grid-column: span 2; margin-top: 10px; }
         .btn-main { background: #27ae60; grid-column: span 2; }
         .btn-game { background: #2980b9; }
-        .btn-offer { background: #8e44ad; }
-        .btn-rules { background: #e74c3c; grid-column: span 2; margin-top: 10px; }
-        .btn-ref { background: #f39c12; grid-column: span 2; }
+        .btn-ref { background: #f39c12; grid-column: span 2; margin-bottom: 15px;}
         #adminBtn { background: #d35400; margin-top: 20px; width: 100%; display: none; }
     </style>
 </head>
@@ -30,29 +28,19 @@
         <h1 id="userBalance">0</h1>
     </div>
 
-    <div class="refer-section">
-        <p style="margin:0 0 10px 0; font-size:14px;">🎁 প্রতি রেফারে পান ১০০ পয়েন্ট!</p>
-        <button class="btn-ref" onclick="shareReferral()">🔗 Invite Friends & Earn </button>
-    </div>
+    <button class="btn-ref" onclick="shareReferral()">🔗 Invite Friends & Earn </button>
 
     <div class="btn-grid">
-        <button class="btn-main" onclick="awardCoins(20, 85, LINKS.general, 'Daily Bonus')">🎁 Daily Bonus (+20)</button>
-        <button class="btn-game" onclick="awardCoins(20, 85, LINKS.game, 'Game Bonus')">🎮 Play Game (+20)</button>
-        <button class="btn-offer" onclick="awardCoins(20, 85, LINKS.offer, 'Mega Offer')">🧲 Offer Wall (+20)</button>
-        <button class="btn-ad" style="background: #f1c40f; color: #000;" onclick="awardCoins(15, 60, LINKS.general, 'Ad Reward')">📺 Watch Ad (+15)</button>
+        <button class="btn-main" onclick="awardCoins(20, 85, 'https://otieu.com/4/10540712', 'Daily Bonus')">🎁 Daily Bonus (+20)</button>
+        <button class="btn-game" onclick="awardCoins(20, 85, 'https://otieu.com/4/10235751', 'Game Bonus')">🎮 Play Game (+20)</button>
+        <button class="btn-game" style="background:#8e44ad;" onclick="awardCoins(20, 85, 'https://otieu.com/4/10453524', 'Mega Offer')">🧲 Mega Offer (+20)</button>
+        <button class="btn-game" style="background:#f1c40f; color:#000;" onclick="awardCoins(15, 60, 'https://otieu.com/4/10540712', 'Watch Ad')">📺 Watch Ad (+15)</button>
         <button class="btn-rules" onclick="showRules()">📜 Rules & Information</button>
-        <button class="btn-ad" style="background:#16a085; grid-column: span 2;" onclick="tg.openLink('https://t.me/skbd355_official')">📢 Official Channel</button>
     </div>
     
     <button id="adminBtn" onclick="toggleAdmin()">🛠 Admin Dashboard</button>
     
 <script>
-const LINKS = { 
-    general: "https://otieu.com/4/10540712", 
-    game: "https://otieu.com/4/10235751", 
-    offer: "https://otieu.com/4/10453524" 
-};
-
 firebase.initializeApp({ 
     apiKey: "AIzaSyD8ZSiPZ9HDJV1qGznPOBAu2qYN9lmSqWU", 
     authDomain: "skbd355-reward-app.firebaseapp.com", 
@@ -62,7 +50,6 @@ firebase.initializeApp({
 const db = firebase.firestore();
 const tg = window.Telegram.WebApp;
 const user = tg.initDataUnsafe?.user;
-const startParam = tg.initDataUnsafe?.start_param; 
 let userRef;
 
 if (user) {
@@ -71,39 +58,28 @@ if (user) {
     if (user.id === 6311806060) document.getElementById("adminBtn").style.display = "block";
 
     userRef.onSnapshot(doc => {
-        if (doc.exists) {
-            document.getElementById("userBalance").innerText = doc.data().balance;
-        } else {
-            userRef.set({ name: user.first_name, balance: 0, telegram_id: user.id, joined_at: new Date() })
-            .then(() => {
-                if (startParam && startParam !== String(user.id)) {
-                    db.collection("users").doc(startParam).update({ balance: firebase.firestore.FieldValue.increment(100) });
-                }
-            });
-        }
+        if (doc.exists) document.getElementById("userBalance").innerText = doc.data().balance;
     });
 }
 
 function showRules() {
-    tg.showAlert("📜 আমাদের নিয়মাবলী:\n\n১. বিজ্ঞাপনে ক্লিক করার পর অবশ্যই অ্যাড দেখা সম্পূর্ণ করতে হবে।\n২. ভুল ক্লিক করলে কয়েন যোগ হবে না।\n৩. ৫০০০ পয়েন্ট হলে পয়েন্ট ভাঙিয়ে বিকাশ, নগদ বা রকেটে পেমেন্ট নিতে পারবেন।\n৪. পেমেন্ট ২৪ ঘন্টার মধ্যে করা হয়।\n৫. বেশি ইনকামের জন্য USA বা UK VPN ব্যবহার করুন।\n\n⚠️ বিশেষ দ্রষ্টব্য: পয়েন্ট মানেই টাকা নয়।");
+    // tg.showAlert এর বদলে সাধারণ alert ব্যবহার করা হয়েছে
+    alert("📜 আমাদের নিয়মাবলী:\n\n১. বিজ্ঞাপনে ক্লিক করার পর অবশ্যই অ্যাড দেখা সম্পূর্ণ করতে হবে।\n২. ভুল ক্লিক করলে কয়েন যোগ হবে না।\n৩. ৫০০০ পয়েন্ট হলে পয়েন্ট ভাঙিয়ে বিকাশ, নগদ বা রকেটে পেমেন্ট নিতে পারবেন।\n৪. পেমেন্ট ২৪ ঘন্টার মধ্যে করা হয়।\n৫. বেশি ইনকামের জন্য USA বা UK VPN ব্যবহার করুন।\n\n⚠️ বিশেষ দ্রষ্টব্য: পয়েন্ট মানেই টাকা নয়।");
 }
 
 function shareReferral() {
     const inviteLink = `https://t.me/skbd355_bot?start=${user.id}`; 
-    const shareText = `🚀 এই অ্যাপে গেম খেলে আর ভিডিও দেখে টাকা ইনকাম করা যায়! জয়েন করলেই বোনাস পাবেন:`;
-    tg.openTelegramLink(`https://t.me/share/url?url=${encodeURIComponent(inviteLink)}&text=${encodeURIComponent(shareText)}`);
+    tg.openTelegramLink(`https://t.me/share/url?url=${encodeURIComponent(inviteLink)}&text=Join and Earn!`);
 }
 
 function awardCoins(amount, time, link, taskName) {
-    tg.showConfirm(`${taskName}: বিজ্ঞাপনে ${time} সেকেন্ড থাকলে পয়েন্ট পাবেন। শুরু করবেন?`, (ok) => {
-        if (ok) {
-            tg.openLink(link);
-            setTimeout(() => {
-                userRef.update({ balance: firebase.firestore.FieldValue.increment(amount) });
-                tg.showAlert(`✅ ${amount} পয়েন্ট যোগ হয়েছে!`);
-            }, time * 1000);
-        }
-    });
+    if(confirm(taskName + ": বিজ্ঞাপনে " + time + " সেকেন্ড থাকলে পয়েন্ট পাবেন। শুরু করবেন?")) {
+        tg.openLink(link);
+        setTimeout(() => {
+            userRef.update({ balance: firebase.firestore.FieldValue.increment(amount) });
+            alert("✅ " + amount + " পয়েন্ট যোগ হয়েছে!");
+        }, time * 1000);
+    }
 }
 
 function toggleAdmin() {
@@ -111,46 +87,30 @@ function toggleAdmin() {
         let list = "📢 পেন্ডিং পেমেন্ট লিস্ট:\n\n";
         snap.forEach(doc => { 
             let d = doc.data();
-            let method = d.method ? d.method.toUpperCase() : 'N/A';
-            let num = d.number || d.payment_number || 'N/A';
-            list += `📱 ${method}: ${num}\n💰 Amt: ${d.amount}\n\n`; 
+            list += "📱 " + (d.method || "N/A").toUpperCase() + ": " + (d.number || "N/A") + "\n💰 Amt: " + d.amount + "\n\n"; 
         });
         alert(list || "বর্তমানে কোনো পেন্ডিং রিকোয়েস্ট নেই।");
-    }).catch(err => alert("Error: " + err.message));
+    });
 }
 
 tg.MainButton.setText("💰 WITHDRAW MONEY").show().onClick(() => {
     userRef.get().then(doc => {
-        if (doc.exists && doc.data().balance < 5000) {
-            tg.showAlert("⚠️ অন্তত ৫০০০ পয়েন্ট প্রয়োজন!");
-        } else {
-            const method = prompt("পেমেন্ট মাধ্যম লিখুন (bkash/nagad/rocket):");
-            if (!method || !['bkash', 'nagad', 'rocket'].includes(method.toLowerCase())) {
-                return tg.showAlert("❌ সঠিক মাধ্যম লিখুন!");
-            }
-            const num = prompt(`${method.toUpperCase()} নম্বরটি লিখুন:`);
+        if (doc.data().balance < 5000) return alert("⚠️ অন্তত ৫০০০ পয়েন্ট প্রয়োজন!");
+        let method = prompt("পেমেন্ট মাধ্যম (bkash/nagad/rocket):");
+        if (method) {
+            let num = prompt(method.toUpperCase() + " নাম্বার দিন:");
             if (num && num.length >= 11) {
                 db.collection("withdraws").add({
-                    user_id: user.id,
-                    name: user.first_name,
-                    number: num,
-                    amount: 5000,
-                    method: method.toLowerCase(),
-                    status: "pending",
-                    timestamp: new Date()
+                    user_id: user.id, number: num, amount: 5000, method: method.toLowerCase(), status: "pending", timestamp: new Date()
                 }).then(() => {
                     userRef.update({ balance: firebase.firestore.FieldValue.increment(-5000) });
-                    tg.showAlert("✅ আপনার রিকোয়েস্টটি সফল হয়েছে!");
+                    alert("✅ রিকোয়েস্ট সফল হয়েছে!");
                 });
-            } else {
-                tg.showAlert("❌ সঠিক নম্বর দিন!");
             }
         }
     });
 });
-
 tg.expand();
 </script>
 </body>
-            </html>
-    
+</html>
