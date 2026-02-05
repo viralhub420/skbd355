@@ -11,17 +11,20 @@
         body { background:#0f0f0f; color:#ffffff; text-align:center; font-family: 'Segoe UI', sans-serif; padding:15px; margin: 0; }
         .balance-card { background: linear-gradient(135deg, #0088cc, #005f91); padding: 25px; border-radius: 20px; margin-bottom: 20px; box-shadow: 0 10px 20px rgba(0,0,0,0.3); }
         .balance-card h1 { font-size: 42px; margin: 10px 0; }
+        .refer-section { background: #1e1e1e; padding: 15px; border-radius: 15px; margin-bottom: 20px; border: 1px dashed #0088cc; }
         .btn-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
         button { padding: 16px; border: none; border-radius: 15px; font-weight: bold; cursor: pointer; font-size: 14px; color: white; transition: 0.2s; }
         button:active { transform: scale(0.95); }
-        .btn-rules { background: #e74c3c; grid-column: span 2; margin-top: 10px; }
         .btn-main { background: #27ae60; grid-column: span 2; }
         .btn-game { background: #2980b9; }
-        .btn-ref { background: #f39c12; grid-column: span 2; margin-bottom: 15px;}
+        .btn-offer { background: #8e44ad; }
+        .btn-rules { background: #e74c3c; grid-column: span 2; margin-top: 10px; }
+        .btn-ref { background: #f39c12; grid-column: span 2; }
+        .btn-official { background: #16a085; grid-column: span 2; }
         #adminBtn { background: #d35400; margin-top: 20px; width: 100%; display: none; }
+        .btn-ad { background: #f1c40f; color: #000; }
     </style>
 </head>
-    
 <body>
     <div class="header"><h3>Welcome, <span id="userName">User</span>!</h3></div>
     <div class="balance-card">
@@ -35,19 +38,17 @@
     </div>
 
     <div class="btn-grid">
-        <button class="btn-main" onclick="awardCoins(20, 85, LINKS.general, 'Daily Bonus')">🎁 Daily Bonus (+20)</button>
-        <button class="btn-game" onclick="awardCoins(20, 85, LINKS.game, 'Game Bonus')">🎮 Play Game (+20)</button>
-        <button class="btn-offer" onclick="awardCoins(20, 85, LINKS.offer, 'Mega Offer')">🧲 Mega Offer (+20)</button>
-        
-        <button class="btn-ad" style="background: #f1c40f; color: #000; border: none;" onclick="awardCoins(15, 60, LINKS.general, 'Ad Reward')">📺 Watch Ad (+15)</button>
-        <button class="review-btn" onclick="openReview()" style="background: #f1c40f; color: #000; font-weight: bold; border-radius: 15px; border: none; cursor: pointer;"> ⭐ Review (+10)</button>
-        
+        <button class="btn-main" onclick="awardCoins(20, 85, 'https://otieu.com/4/10540712', 'Daily Bonus')">🎁 Daily Bonus (+20)</button>
+        <button class="btn-game" onclick="awardCoins(20, 85, 'https://otieu.com/4/10235751', 'Game Bonus')">🎮 Play Game (+20)</button>
+        <button class="btn-offer" onclick="awardCoins(20, 85, 'https://otieu.com/4/10453524', 'Mega Offer')">🧲 Mega Offer (+20)</button>
+        <button class="btn-ad" onclick="awardCoins(15, 60, 'https://otieu.com/4/10540712', 'Watch Ad')">📺 Watch Ad (+15)</button>
+        <button class="btn-ad" style="background: #f1c40f; color: #000;" onclick="openReview()">⭐ Review (+10)</button>
         <button class="btn-rules" onclick="showRules()">📜 Rules & Information</button>
-        <button class="btn-ad" style="background:#16a085; grid-column: span 2;" onclick="tg.openLink('https://t.me/skbd355_official')">📢 Official Channel</button>
+        <button class="btn-official" onclick="tg.openLink('https://t.me/skbd355_official')">📢 Official Channel</button>
     </div>
     
     <button id="adminBtn" onclick="toggleAdmin()">🛠 Admin Dashboard</button>
-
+    
 <script>
 firebase.initializeApp({ 
     apiKey: "AIzaSyD8ZSiPZ9HDJV1qGznPOBAu2qYN9lmSqWU", 
@@ -71,13 +72,20 @@ if (user) {
 }
 
 function showRules() {
-    // tg.showAlert এর বদলে সাধারণ alert ব্যবহার করা হয়েছে
     alert("📜 আমাদের নিয়মাবলী:\n\n১. বিজ্ঞাপনে ক্লিক করার পর অবশ্যই অ্যাড দেখা সম্পূর্ণ করতে হবে।\n২. ভুল ক্লিক করলে কয়েন যোগ হবে না।\n৩. ৫০০০ পয়েন্ট হলে পয়েন্ট ভাঙিয়ে বিকাশ, নগদ বা রকেটে পেমেন্ট নিতে পারবেন।\n৪. পেমেন্ট ২৪ ঘন্টার মধ্যে করা হয়।\n৫. বেশি ইনকামের জন্য USA বা UK VPN ব্যবহার করুন।\n\n⚠️ বিশেষ দ্রষ্টব্য: পয়েন্ট মানেই টাকা নয়।");
 }
 
 function shareReferral() {
     const inviteLink = `https://t.me/skbd355_bot?start=${user.id}`; 
     tg.openTelegramLink(`https://t.me/share/url?url=${encodeURIComponent(inviteLink)}&text=Join and Earn!`);
+}
+
+function openReview() {
+    tg.openLink("https://otieu.com/4/10370640");
+    alert("অ্যাডটি দেখে রিভিউ সম্পন্ন করুন এবং ১০ পয়েন্ট বোনাস নিন!");
+    setTimeout(() => {
+        userRef.update({ balance: firebase.firestore.FieldValue.increment(10) });
+    }, 5000);
 }
 
 function awardCoins(amount, time, link, taskName) {
