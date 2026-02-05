@@ -88,13 +88,32 @@ function openReview() {
     }, 5000);
 }
 
+// আপনার ওয়ার্নিং সিস্টেমসহ নতুন ফাংশন
 function awardCoins(amount, time, link, taskName) {
-    if(confirm(taskName + ": বিজ্ঞাপনে " + time + " সেকেন্ড থাকলে পয়েন্ট পাবেন। শুরু করবেন?")) {
+    if(confirm(taskName + ": বিজ্ঞাপনে " + time + " সেকেন্ড থাকতে হবে। শুরু করবেন?")) {
+        const startTime = Date.now();
         tg.openLink(link);
-        setTimeout(() => {
-            userRef.update({ balance: firebase.firestore.FieldValue.increment(amount) });
-            alert("✅ " + amount + " পয়েন্ট যোগ হয়েছে!");
-        }, time * 1000);
+        
+        // ইউজার ফিরে আসলে ওয়ার্নিং চেক
+        window.onfocus = function() {
+            const now = Date.now();
+            const diff = Math.floor((now - startTime) / 1000);
+            if (diff < time) {
+                alert("⚠️ সতর্কতা: আপনি মাত্র " + diff + " সেকেন্ড অ্যাড দেখেছেন। পয়েন্ট পেতে আরও " + (time - diff) + " সেকেন্ড অপেক্ষা করুন!");
+            }
+        };
+
+        const checkInterval = setInterval(() => {
+            const currentTime = Date.now();
+            const timeDiff = Math.floor((currentTime - startTime) / 1000);
+
+            if (timeDiff >= time) {
+                clearInterval(checkInterval);
+                window.onfocus = null; // ওয়ার্নিং বন্ধ
+                userRef.update({ balance: firebase.firestore.FieldValue.increment(amount) });
+                alert("✅ অভিনন্দন! আপনি " + amount + " পয়েন্ট পেয়েছেন।");
+            }
+        }, 1000);
     }
 }
 
@@ -127,6 +146,8 @@ tg.MainButton.setText("💰 WITHDRAW MONEY").show().onClick(() => {
     });
 });
 tg.expand();
-</script>
+                                </script>
+    
+
 </body>
 </html>
