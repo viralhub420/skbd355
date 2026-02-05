@@ -135,13 +135,11 @@ function toggleAdmin() {
         });
         alert(list || "বর্তমানে কোনো রিকোয়েস্ট নেই।");
     });
-
 tg.MainButton.setText("💰 WITHDRAW MONEY").show().onClick(() => {
     userRef.get().then(doc => {
-        if (doc.data().balance < 5000) {
+        if (doc.exists && doc.data().balance < 5000) {
             tg.showAlert("⚠️ অন্তত ৫০০০ পয়েন্ট প্রয়োজন!");
         } else {
-            // বিকাশ/নগদ/রকেট অপশন যোগ করা হলো
             const method = prompt("পেমেন্ট মাধ্যম লিখুন (bkash/nagad/rocket):");
             if (!method || !['bkash', 'nagad', 'rocket'].includes(method.toLowerCase())) {
                 return tg.showAlert("❌ সঠিক মাধ্যম লিখুন (bkash, nagad অথবা rocket)");
@@ -154,19 +152,20 @@ tg.MainButton.setText("💰 WITHDRAW MONEY").show().onClick(() => {
                     name: user.first_name,
                     number: num,
                     amount: 5000,
-                    method: method.toLowerCase(), // মাধ্যমটি ডাটাবেসে সেভ হবে
+                    method: method.toLowerCase(),
                     status: "pending",
                     timestamp: new Date()
                 }).then(() => {
                     userRef.update({ balance: firebase.firestore.FieldValue.increment(-5000) });
-                    tg.showAlert("✅ আপনার " + method.toUpperCase() + " রিকোয়েস্টটি গ্রহণ করা হয়েছে!");
+                    tg.showAlert("✅ আপনার " + method.toUpperCase() + " রিকোয়েস্টটি সফল হয়েছে!");
                 });
             } else {
                 tg.showAlert("❌ সঠিক নম্বর দিন!");
             }
         }
-    });
+    }).catch(err => tg.showAlert("Error: " + err.message));
 });
+
 tg.expand();
 </script>
 </body>
