@@ -135,6 +135,7 @@ function toggleAdmin() {
         });
         alert(list || "বর্তমানে কোনো রিকোয়েস্ট নেই।");
     });
+)    
 tg.MainButton.setText("💰 WITHDRAW MONEY").show().onClick(() => {
     userRef.get().then(doc => {
         if (doc.exists && doc.data().balance < 5000) {
