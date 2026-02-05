@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SKBD Premium Rewards</title>
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+    <style>
+        body { background:#0f0f0f; color:#ffffff; text-align:center; font-family: 'Segoe UI', sans-serif; padding:15px; margin: 0; }
+        .balance-card { background: linear-gradient(135deg, #0088cc, #005f91); padding: 25px; border-radius: 20px; margin-bottom: 20px; box-shadow: 0 10px 20px rgba(0,0,0,0.3); }
+        .balance-card h1 { font-size: 42px; margin: 10px 0; }
+        .refer-section { background: #1e1e1e; padding: 15px; border-radius: 15px; margin-bottom: 20px; border: 1px dashed #0088cc; }
+        .btn-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+        button { padding: 16px; border: none; border-radius: 15px; font-weight: bold; cursor: pointer; font-size: 14px; color: white; transition: 0.2s; }
+        button:active { transform: scale(0.95); }
+        .btn-main { background: #27ae60; grid-column: span 2; }
+        .btn-game { background: #2980b9; }
+        .btn-offer { background: #8e44ad; }
+        .btn-rules { background: #e74c3c; grid-column: span 2; margin-top: 10px; }
+        .btn-ref { background: #f39c12; grid-column: span 2; }
+        #adminBtn { background: #d35400; margin-top: 20px; width: 100%; display: none; }
+        .review-btn { background: #f1c40f !important; color: #000 !important; font-size: 13px !important; padding: 10px 5px !important; }
+    </style>
+</head>
+<body>
+    <div class="header"><h3>Welcome, <span id="userName">User</span>!</h3></div>
+    <div class="balance-card">
+        <p>Current Balance</p>
+        <h1 id="userBalance">0</h1>
+    </div>
+
+    <div class="refer-section">
+        <p style="margin:0 0 10px 0; font-size:14px;">🎁 প্রতি রেফারে পান ১০০ পয়েন্ট!</p>
+        <button class="btn-ref" id="shareBtn">🔗 Invite Friends & Earn </button>
+    </div>
+
+    <div class="btn-grid">
+        <button class="btn-main" onclick="awardCoins(20, 85, LINKS.general, 'Daily Bonus')">🎁 Daily Bonus (+20)</button>
+        <button class="btn-game" onclick="awardCoins(20, 85, LINKS.game, 'Game Bonus')">🎮 Play Game (+20)</button>
+        <button class="btn-offer" onclick="awardCoins(20, 85, LINKS.offer, 'Mega Offer')">🧲 Offer Wall (+20)</button>
+        <button class="btn-ad" style="background: #f1c40f; color: #000; border: none;" onclick="awardCoins(15, 60, LINKS.general, 'Ad Reward')">📺 Watch Ad (+15)</button>
+        <button class="btn review-btn" onclick="openReview()"> ⭐ Review (+10)</button>
+        <button class="btn-rules" id="rulesBtn">📜 Rules & Information</button>
+        <button class="btn-ad" style="background:#16a085; grid-column: span 2;" onclick="tg.openLink('https://t.me/skbd355_official')">📢 Official Channel</button>
+    </div>
+    
+    <button id="adminBtn">🛠 Admin Dashboard</button>
+    
+<script>
+const LINKS = { 
+    general: "https://otieu.com/4/10540712", 
+    game: "https://otieu.com/4/10235751", 
+    offer: "https://otieu.com/4/10453524" 
+};
+
+firebase.initializeApp({ 
+    apiKey: "AIzaSyD8ZSiPZ9HDJV1qGznPOBAu2qYN9lmSqWU", 
+    authDomain: "skbd355-reward-app.firebaseapp.com", 
+    projectId: "skbd355-reward-app" 
+});
+
+const db = firebase.firestore();
+const tg = window.Telegram.WebApp;
+const user = tg.initDataUnsafe?.user;
+const startParam = tg.initDataUnsafe?.start_param; 
+let userRef;
+
+if (user) {
+    document.getElementById("userName").innerText = user.first_name;
+    userRef = db.collection("users").doc(String(user.id));
+    if (user.id === 6311806060) document.getElementById("adminBtn").style.display = "block";
+
+    userRef.onSnapshot(doc => {
+        if (doc.exists) {
+            document.getElementById("userBalance").innerText = doc.data().balance;
+        } else {
+            userRef.set({ name: user.first_name, balance: 0, telegram_id: user.id, joined_at: new Date() })
+            .then(() => {
+                if (startParam && startParam !== String(user.id)) {
+                    db.collection("users").doc(startParam).update({ balance: firebase.firestore.FieldValue.increment(100) });
+                }
+            });
+        }
+    });
+}
+
+function openReview() {
+    window.open("https://otieu.com/4/10370640", "_blank");
+    setTimeout(function() { window.location.href = "https://t.me/skbd355_official"; }, 5000);
+    alert("অ্যাডটি দেখে রিভিউ সম্পন্ন করুন এবং ১০ পয়েন্ট বোনাস নিন!");
+}
+
+function showRules() {
+    tg.showAlert(`📜 আমাদের নিয়মাবলী:\n\n১. বিজ্ঞাপনে ক্লিক করার পর অবশ্যই অ্যাড দেখা সম্পূর্ণ করতে হবে।\n২. ভুল ক্লিক করলে কয়েন যোগ হবে না।\n৩. ৫০০০ পয়েন্ট হলে পয়েন্ট ভাঙিয়ে বিকাশ, নগদ বা রকেটে পেমেন্ট নিতে পারবেন।\n৪. পেমেন্ট ২৪ ঘন্টার মধ্যে করা হয়।\n৫. বেশি ইনকামের জন্য USA বা UK VPN ব্যবহার করুন।\n\n⚠️ বিশেষ দ্রষ্টব্য: পয়েন্ট মানেই টাকা নয়।`);
+}
+
+function shareReferral() {
+    const inviteLink = `https://t.me/skbd355_bot?start=${user.id}`; 
+    const shareText = `🚀 এই অ্যাপে গেম খেলে আর ভিডিও দেখে টাকা ইনকাম করা যায়! জয়েন করলেই বোনাস পাবেন:`;
+    tg.openTelegramLink(`https://t.me/share/url?url=${encodeURIComponent(inviteLink)}&text=${encodeURIComponent(shareText)}`);
+}
+
+function awardCoins(amount, time, link, taskName) {
+    tg.showConfirm(`${taskName}: বিজ্ঞাপনে ${time} সেকেন্ড থাকলে পয়েন্ট পাবেন। শুরু করবেন?`, (ok) => {
+        if (ok) {
+            tg.openLink(link);
+            setTimeout(() => {
+                userRef.update({ balance: firebase.firestore.FieldValue.increment(amount) });
+                tg.showAlert(`✅ ${amount} পয়েন্ট যোগ হয়েছে!`);
+            }, time * 1000);
+        }
+    });
+}
+
+function toggleAdmin() {
+    db.collection("withdraws").where("status", "==", "pending").get().then(snap => {
+        let list = "📢 পেন্ডিং পেমেন্ট লিস্ট:\n\n";
+        snap.forEach(doc => { 
+            let d = doc.data();
+            let method = d.method ? d.method.toUpperCase() : 'N/A';
+            let num = d.number || d.payment_number || 'N/A';
+            list += `📱 ${method}: ${num}\n💰 Amt: ${d.amount}\n\n`; 
+        });
+        alert(list || "বর্তমানে কোনো পেন্ডিং রিকোয়েস্ট নেই।");
+    }).catch(err => alert("Error: " + err.message));
+}
+
+// বাটনগুলো সচল করার কোড
+document.getElementById("rulesBtn").onclick = () => showRules();
+document.getElementById("adminBtn").onclick = () => toggleAdmin();
+document.getElementById("shareBtn").onclick = () => shareReferral();
+
+tg.MainButton.setText("💰 WITHDRAW MONEY").show().onClick(() => {
+    userRef.get().then(doc => {
+        if (doc.exists && doc.data().balance < 5000) {
+            tg.showAlert("⚠️ অন্তত ৫০০০ পয়েন্ট প্রয়োজন!");
+        } else {
+            const method = prompt("পেমেন্ট মাধ্যম লিখুন (bkash/nagad/rocket):");
+            if (!method || !['bkash', 'nagad', 'rocket'].includes(method.toLowerCase())) {
+                return tg.showAlert("❌ সঠিক মাধ্যম লিখুন (bkash, nagad অথবা rocket)");
+            }
+            const num = prompt(`${method.toUpperCase()} নম্বরটি লিখুন:`);
+            if (num && num.length >= 11) {
+                db.collection("withdraws").add({
+                    user_id: user.id,
+                    name: user.first_name,
+                    number: num,
+                    amount: 5000,
+                    method: method.toLowerCase(),
+                    status: "pending",
+                    timestamp: new Date()
+                }).then(() => {
+                    userRef.update({ balance: firebase.firestore.FieldValue.increment(-5000) });
+                    tg.showAlert("✅ আপনার " + method.toUpperCase() + " রিকোয়েস্টটি সফল হয়েছে!");
+                });
+            } else {
+                tg.showAlert("❌ সঠিক নম্বর দিন!");
+            }
+        }
+    }).catch(err => tg.showAlert("Error: " + err.message));
+});
+
+tg.expand();
+</script>
+</body>
+  </html>
+  
